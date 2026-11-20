@@ -563,3 +563,36 @@ dialog.cajon[open]{animation:entra .26s cubic-bezier(.2,.8,.2,1)}
 @media (prefers-reduced-motion:reduce){.foto .foto-real{transition:none}.tarjeta .foto:hover .foto-real{transform:none}}.yape-cols{grid-template-columns:minmax(200px,250px) 1fr}
 .yape .copiable b{white-space:nowrap}
 @media (max-width:980px){.yape-cols{grid-template-columns:1fr;justify-items:center}.yape-cols>div:last-child{width:100%}.qr-dinamico{width:min(100%,270px)}}
+/* ---------- Fondos con imagen (más vida sin cambiar la identidad) ---------- */
+body{background-color:var(--fondo);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='none' stroke='%23103080' stroke-opacity='.07' stroke-width='1.5'%3E%3Cpath d='M0 40h50l10 10h40l10-10h50M40 0v30l10 10M120 160v-40l-10-10H70l-10 10H0M100 50v40l10 10h50'/%3E%3C/g%3E%3Cg fill='%23d02020' fill-opacity='.09'%3E%3Ccircle cx='50' cy='40' r='3'/%3E%3Ccircle cx='110' cy='50' r='3'/%3E%3Ccircle cx='70' cy='110' r='3'/%3E%3Ccircle cx='100' cy='90' r='3'/%3E%3C/g%3E%3C/svg%3E");background-attachment:fixed}
+.cat-card{position:relative;overflow:hidden;isolation:isolate;min-height:190px}
+.cat-foto{position:absolute;right:-18px;bottom:-18px;width:62%;height:auto;aspect-ratio:1;object-fit:cover;border-radius:50%;z-index:-1;opacity:.9;transition:transform .35s ease;-webkit-mask-image:radial-gradient(circle at 60% 60%,#000 52%,transparent 71%);mask-image:radial-gradient(circle at 60% 60%,#000 52%,transparent 71%)}
+.cat-card:hover .cat-foto{transform:scale(1.07) rotate(-2deg)}
+.cat-card .cuenta{background:rgba(255,255,255,.88);align-self:flex-start;padding:2px 8px;border-radius:6px}
+.seccion-foto{position:relative;isolation:isolate;border-radius:18px;padding:clamp(24px,4vw,44px);color:#fff;overflow:hidden;background:#0b2260}
+.seccion-foto::before{content:'';position:absolute;inset:0;z-index:-2;background:url(../img/portada-2.webp) center/cover no-repeat}
+.seccion-foto::after{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(115deg,rgba(11,34,96,.95) 0%,rgba(11,34,96,.86) 45%,rgba(168,24,24,.72) 100%)}
+.seccion-foto .sec-cab p{color:#d7e0f5}
+.seccion-foto .paso,.seccion-foto .pago-card{color:var(--tinta);border-color:transparent;box-shadow:0 14px 30px -18px rgba(0,0,0,.6)}
+.seccion-foto .pago-card{background:rgba(255,255,255,.94)}
+.btn-yape{background:var(--yape);color:#fff;min-height:36px;padding:0 12px;font-size:.85rem;align-self:center}
+.btn-yape:hover{background:#5d1a6b}
+.pp-monto{align-items:center;flex-wrap:wrap}
+.pp-monto b{margin-left:auto}
+@media (max-width:700px){.cat-card{min-height:150px}.cat-foto{width:46%}}
+@media (prefers-reduced-motion:reduce){.cat-card:hover .cat-foto{transform:none}}.cat-foto{width:46%;right:-10px;bottom:-12px}
+.cat-card strong,.cat-card small{text-shadow:0 0 6px #fff,0 0 2px #fff;position:relative}
+.cat-card small{max-width:70%}
+/* ---------- Extras: voz, feriados, distancia, QR del pedido ---------- */
+.btn-voz{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;color:var(--azul);flex:none}
+.btn-voz:hover{background:var(--azul-claro)}
+.btn-voz.escuchando{background:var(--rojo);color:#fff;animation:latido 1s ease-in-out infinite}
+@keyframes latido{50%{box-shadow:0 0 0 8px rgba(208,32,32,.18)}}
+.aviso-feriado{background:var(--ambar-claro);color:var(--ambar);font-size:.9rem;padding:8px 0;border-bottom:1px solid #f0d9a0}
+.aviso-feriado a{text-decoration:underline;font-weight:700}
+.distancia{margin-top:14px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+#resDistancia{font-size:.92rem;color:var(--tinta-2)}
+.qr-pedido{margin:14px auto 4px;display:flex;flex-direction:column;align-items:center;gap:6px;max-width:300px}
+.qr-pedido canvas{width:150px;height:150px;border:1px solid var(--linea);border-radius:10px;background:#fff;padding:6px;image-rendering:pixelated}
+.qr-pedido figcaption{font-size:.84rem;color:var(--tenue);text-align:center;line-height:1.35}
+@media (prefers-reduced-motion:reduce){.btn-voz.escuchando{animation:none}}

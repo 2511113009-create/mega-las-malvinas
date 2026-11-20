@@ -57,7 +57,18 @@
     };
   }
 
+  // Registro en Google Sheets (Apps Script). text/plain evita la verificación CORS previa.
+  async function registrarEnHoja(p) {
+    if (!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(T.hojaPedidos || '')) return {ok: false, motivo: 'sin-hoja'};
+    try {
+      const r = await fetch(T.hojaPedidos, {method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify({accion: 'nuevo', pedido: p})});
+      const j = await r.json().catch(() => ({}));
+      return {ok: !!j.ok};
+    } catch (e) { return {ok: false, motivo: 'red'}; }
+  }
+
   async function enviarPedido(p) {
+    registrarEnHoja(p); // en paralelo; el correo sigue siendo el aviso principal
     const r = await enviarCorreo('Nuevo pedido ' + p.codigo + ' · S/ ' + p.total.toFixed(2), camposPedido(p), p.cliente.correo);
     if (!r.ok) {
       const cola = leerCola().filter((x) => x.codigo !== p.codigo);
@@ -146,5 +157,5 @@
   function leerEnCurso(codigo) { try { return (JSON.parse(localStorage.getItem(EN_CURSO) || '{}'))[codigo] || null; } catch { return null; } }
 
   window.addEventListener('online', () => { reintentarPendientes(); });
-  window.API = {correoValido, enviarPedido, enviarContacto, reintentarPendientes, waURL, mapaURL, mapaVerURL, mapaEmbedURL, copiar, compartir, crearPago, estadoPago, guardarEnCurso, leerEnCurso};
+  window.API = {correoValido, enviarPedido, registrarEnHoja, enviarContacto, reintentarPendientes, waURL, mapaURL, mapaVerURL, mapaEmbedURL, copiar, compartir, crearPago, estadoPago, guardarEnCurso, leerEnCurso};
 })();

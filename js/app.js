@@ -239,6 +239,8 @@
     {img: 'img/portada-3.webp', pos: '80% 50%', kicker: 'Iluminación', t: 'Luz <em>LED</em> para cada espacio', s: 'Focos, reflectores, paneles y lámparas decorativas.', cat: 1, cta: 'Ver iluminación',
       alt: 'Foco de filamento encendido colgando en un taller'}
   ];
+  // Foto de fondo de cada tarjeta de categoría (producto representativo)
+  const FOTO_CAT = {1: 'img/productos/bulb-3.jpg', 2: 'img/productos/spool-0.jpg', 3: 'img/productos/mcb-1.jpg', 4: 'img/productos/drill-1.jpg', 5: 'img/productos/anchors-3.jpg'};
   const desde = (cat) => moneda(Math.min(...PRODUCTOS.filter((p) => p.cat === cat).map((p) => p.precio)));
 
   function vistaInicio() {
@@ -253,9 +255,9 @@
       + '<div class="slide-ctl"><button class="flecha" type="button" data-accion="slide-prev" aria-label="Diapositiva anterior">' + ico('izq') + '</button><div class="puntos" id="puntos">' + SLIDES.map((s, i) => '<button type="button" data-accion="slide-ir" data-i="' + i + '" aria-label="Ir a la diapositiva ' + (i + 1) + '"' + (i === 0 ? ' aria-current="true"' : '') + '></button>').join('') + '</div><button class="flecha" type="button" data-accion="slide-next" aria-label="Diapositiva siguiente">' + ico('der') + '</button></div></section>'
       + '<div class="confianza">' + confianza.map((c) => '<div>' + ico(c[0]) + '<p><b>' + c[1] + '</b><span>' + c[2] + '</span></p></div>').join('') + '</div>'
       + '<section class="seccion" id="categorias"><div class="sec-cab"><div><h2 class="titulo">Explora por categoría</h2><p>Encuentra rápido lo que necesitas.</p></div></div><div class="cat-grid">'
-      + CATEGORIAS.map((c) => '<a class="cat-card" href="#catalogo?cat=' + c.id + '"><span class="cat-ico">' + ico(c.icono) + '</span><span><strong>' + c.nombre + '</strong><small>' + c.texto + '</small></span><span class="cuenta">' + PRODUCTOS.filter((p) => p.cat === c.id).length + ' productos</span></a>').join('') + '</div></section>'
+      + CATEGORIAS.map((c) => '<a class="cat-card" href="#catalogo?cat=' + c.id + '">' + (FOTO_CAT[c.id] ? '<img class="cat-foto" src="' + FOTO_CAT[c.id] + '" alt="" loading="lazy" decoding="async" width="720" height="720">' : '') + '<span class="cat-ico">' + ico(c.icono) + '</span><span><strong>' + c.nombre + '</strong><small>' + c.texto + '</small></span><span class="cuenta">' + PRODUCTOS.filter((p) => p.cat === c.id).length + ' productos</span></a>').join('') + '</div></section>'
       + '<section class="seccion"><div class="sec-cab"><div><h2 class="titulo">Productos destacados</h2></div><a class="enlace" href="#catalogo">Ver catálogo completo ' + ico('der') + '</a></div><div class="rejilla">' + DESTACADOS.map((id) => tarjeta(porId.get(id))).join('') + '</div></section>'
-      + '<section class="seccion" id="como-comprar"><div class="sec-cab"><div><h2 class="titulo">Cómo comprar</h2><p>Tres pasos, sin complicaciones.</p></div></div><div class="pasos">'
+      + '<section class="seccion seccion-foto" id="como-comprar"><div class="sec-cab"><div><h2 class="titulo">Cómo comprar</h2><p>Tres pasos, sin complicaciones.</p></div></div><div class="pasos">'
       + '<div class="paso">' + ico('cart') + '<h3>Elige tus productos</h3><p>Busca por nombre o código, agrégalos al carrito y ajusta las cantidades.</p></div>'
       + '<div class="paso">' + ico('wallet') + '<h3>Paga con Yape</h3><p>Escanea el QR o yapea al número de la tienda y registra tu número de operación.</p></div>'
       + '<div class="paso">' + ico('store') + '<h3>Recoge en tienda</h3><p>Te escribimos para confirmar tu pedido. Presenta tu código al recoger.</p></div></div>'
@@ -263,6 +265,7 @@
       + '<section class="seccion" id="contacto"><div class="contacto"><div class="panel"><h2>Estamos en Barranca</h2><p>Consulta medidas, disponibilidad o pide ayuda para elegir el producto correcto.</p>'
       + '<ul class="datos-lista"><li>' + ico('pin') + '<p><b>Ubicación</b><span>Barranca, Lima, Perú</span></p></li><li>' + ico('whatsapp') + '<p><b>WhatsApp</b><span data-tel></span></p></li><li>' + ico('wallet') + '<p><b>Yape</b><span data-tel></span></p></li></ul>'
       + '<div class="fila-btn"><a class="btn btn-wa" href="#" data-wa target="_blank" rel="noopener">' + ico('whatsapp') + ' Escribir por WhatsApp</a><a class="btn btn-sec" href="#" data-mapa target="_blank" rel="noopener">' + ico('route') + ' Cómo llegar</a></div>'
+      + '<p class="distancia"><button class="enlace" type="button" data-accion="distancia">' + ico('pin') + ' ¿A qué distancia estoy de la tienda?</button><span id="resDistancia" role="status"></span></p>'
       + '<div class="mapa"><iframe title="Mapa con la ubicación de Mega Las Malvinas" src="' + esc(API.mapaEmbedURL()) + '" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe><a class="enlace" href="' + esc(API.mapaVerURL()) + '" target="_blank" rel="noopener">Abrir en Google Maps ' + ico('der') + '</a></div></div>'
       + '<form class="panel" id="formContacto" novalidate><h2>Escríbenos</h2><p>Déjanos tu mensaje y tu correo; te respondemos lo antes posible.</p>'
       + '<div class="campo"><label for="cNombre">Nombre</label><input id="cNombre" name="nombre" type="text" autocomplete="name" maxlength="80" required><span class="error" id="ecNombre"></span></div>'
@@ -541,7 +544,7 @@
     } else if (c.paso === 2) {
       cont.innerHTML = cerrar + '<div class="compra">' + pasosHTML(2) + '<div class="compra-grid"><form id="formPago" novalidate><h2 id="dlgPagoTit">Elige cómo pagar</h2><p class="sub">Total a pagar: <b>' + moneda(totalCent() / 100) + '</b></p>'
         + '<div class="metodos" role="radiogroup" aria-label="Método de pago">'
-        + metodoHTML('yape', '<span class="m-ico yape" aria-hidden="true">Y</span>', 'Yape', qrYapeDisponible() ? 'QR con el monto ya incluido' : 'Escanea el QR o yapea al ' + T.yape.numeroVisible, '<span class="rec">Más rápido</span>')
+        + metodoHTML('yape', '<span class="m-ico yape" aria-hidden="true">Y</span>', 'Yape', 'Escanea el QR o yapea al ' + T.yape.numeroVisible, '<span class="rec">Más rápido</span>')
         + (pasarelaActiva() ? metodoHTML('pasarela', '<span class="m-ico" aria-hidden="true">' + ico('shield') + '</span>', 'Tarjeta u otros medios', 'Pago seguro con Mercado Pago, confirmación automática', '') : '')
         + metodoHTML('transferencia', '<span class="m-ico" aria-hidden="true">' + ico('banco') + '</span>', 'Transferencia bancaria', 'Cuenta y CCI en soles', '')
         + metodoHTML('tienda', '<span class="m-ico" aria-hidden="true">' + ico('efectivo') + '</span>', 'Pagar en tienda', 'Efectivo, Plin o tarjeta al recoger', '') + '</div>'
@@ -562,6 +565,7 @@
       const ok = enLinea || (r && r.ok);
       cont.innerHTML = cerrar + '<div class="compra">' + pasosHTML(3) + '<div class="exito"><div class="circ' + (ok ? '' : ' ambar') + '">' + ico(ok ? 'check' : 'alerta') + '</div><h2 id="dlgPagoTit">' + (enLinea ? '¡Pago aprobado!' : ok ? '¡Pedido recibido!' : 'Pedido guardado') + '</h2>'
         + '<p>Tu código de pedido</p><div class="codigo"><span>' + esc(ped2.codigo) + '</span><button class="btn btn-sec btn-peq" type="button" data-accion="copiar" data-texto="' + esc(ped2.codigo) + '">' + ico('copy') + ' Copiar</button></div>'
+        + '<figure class="qr-pedido"><canvas id="qrPedido" role="img" aria-label="Código QR del pedido ' + esc(ped2.codigo) + '"></canvas><figcaption>Muestra este QR al recoger: la tienda lo escanea y encuentra tu pedido al instante.</figcaption></figure>'
         + (ok ? '<div class="msj ok">La tienda ya recibió tu pedido. Te escribiremos al <b>' + esc(ped2.cliente.celular) + '</b> para confirmar disponibilidad y el horario de recojo.</div>'
           : '<div class="msj mal"><b>Tu pedido aún no llegó a la tienda.</b> No se perdió: está guardado en este equipo' + (r && r.motivo === 'red' ? ' y lo reenviaremos apenas haya conexión' : '') + '. Para que lo atiendan ahora, envíalo por WhatsApp con el botón de abajo.</div>')
         + '<div class="exito-grid"><div><div class="exito-acc"><a class="btn ' + (ok ? 'btn-sec' : 'btn-wa') + ' btn-block" href="' + API.waURL(mensajePedido(ped2)) + '" target="_blank" rel="noopener">' + ico('whatsapp') + ' ' + (ok ? 'Enviar copia por WhatsApp' : 'Enviar pedido por WhatsApp') + '</a>'
@@ -570,6 +574,12 @@
     }
     pintarIconos(cont);
     if (c.paso === 2) montarQR();
+    if (c.paso === 3) qrDelPedido($('#qrPedido'), c.pedido.codigo);
+  }
+  // QR con el código del pedido: un lector de códigos (o la cámara) en el programa de la tienda lo lee como texto
+  function qrDelPedido(canvas, codigo) {
+    if (!canvas || !window.YAPE_QR || !window.qrcode) { if (canvas) canvas.closest('figure').remove(); return null; }
+    try { YAPE_QR.dibujar(canvas, codigo, '', {color: '#0c1a3d', lado: 260}); return canvas.toDataURL('image/png'); } catch { canvas.closest('figure').remove(); return null; }
   }
   function siguientePaso(p) {
     if (p.pago.metodo === 'tienda') return 'paga en tienda al recoger tu pedido y presenta tu código.';
@@ -582,13 +592,13 @@
     const campoOp = (txt) => '<div class="campo" style="margin:16px 0 0"><label for="fOp">N° de operación</label><input id="fOp" name="op" type="text" inputmode="numeric" maxlength="12" placeholder="' + txt + '" value="' + esc(compra.op) + '" required><span class="ayuda">Lo ves en la constancia de tu pago. Sirve para que la tienda confirme tu pedido.</span><span class="error" id="eOp"></span></div>';
     if (m === 'yape') {
       const dinamico = qrYapeDisponible();
+      const montoTxt = (totalCent() / 100).toFixed(2);
       const qr = dinamico
-        ? '<div class="qr qr-dinamico"><canvas id="qrYape" role="img" aria-label="Código QR de Yape por ' + esc(monto) + ' a nombre de ' + esc(T.yape.titular) + '"></canvas><span class="qr-sello">' + ico('check') + ' Monto incluido</span><button class="enlace-btn" type="button" data-accion="guardar-qr">' + ico('descargar') + ' Guardar QR</button></div>'
+        ? '<div class="qr qr-dinamico"><canvas id="qrYape" role="img" aria-label="Código QR de Yape de ' + esc(T.yape.titular) + ', monto a pagar ' + esc(monto) + '"></canvas><button class="enlace-btn" type="button" data-accion="guardar-qr">' + ico('descargar') + ' Guardar QR</button></div>'
         : '<div class="qr"><img src="' + esc(T.yape.qr) + '" alt="Código QR de Yape de ' + esc(T.yape.titular) + '" width="506" height="506"><a href="' + esc(T.yape.qr) + '" download="yape-mega-las-malvinas.png">Guardar QR</a></div>';
-      const pasos = dinamico
-        ? '<li>Abre Yape, toca <b>Escanear</b> y apunta a este QR.</li><li>Yape mostrará <b>' + monto + '</b> a nombre de ' + esc(T.yape.titular.split(' ')[0]) + '. Revisa y confirma (si no aparece el monto, escríbelo).</li><li>Copia el N° de operación y pégalo abajo.</li>'
-        : '<li>Abre Yape y escanea el QR, o yapea al número.</li><li>Ingresa exactamente <b>' + monto + '</b>.</li><li>Copia el N° de operación y pégalo abajo.</li>';
-      return '<div class="panel-pago yape"><div class="pp-monto"><span>Monto a yapear</span><b>' + monto + '</b></div><div class="yape-cols">' + qr
+      // Yape (cuentas personales) no completa el monto al escanear: el cliente lo escribe.
+      const pasos = '<li>Abre Yape, toca <b>Escanear</b> y apunta a este QR (o yapea al número).</li><li>Escribe el monto <b>' + monto + '</b>. Puedes copiarlo con el botón de arriba.</li><li>Confirma y pega abajo el N° de operación.</li>';
+      return '<div class="panel-pago yape"><div class="pp-monto"><span>Monto a yapear</span><b>' + monto + '</b><button class="btn btn-yape btn-peq" type="button" data-accion="copiar" data-texto="' + montoTxt + '">' + ico('copy') + ' Copiar monto</button></div><div class="yape-cols">' + qr
         + '<div><p class="titular"><small>Yapea a nombre de</small>' + esc(T.yape.titular) + '</p><div class="copiable"><div><small>Celular Yape</small><b>' + esc(T.yape.numeroVisible) + '</b></div><button class="btn btn-sec btn-peq" type="button" data-accion="copiar" data-texto="' + esc(T.yape.numero) + '">' + ico('copy') + ' Copiar</button></div>'
         + '<ol class="instr">' + pasos + '</ol>'
         + (dinamico ? '<p class="nota-movil">' + ico('info') + '<span>¿Compras desde tu celular? Toca <b>Guardar QR</b> y en Yape elige <b>Escanear → Galería</b> para leerlo desde tus fotos.</span></p>' : '')
@@ -692,7 +702,9 @@
   function imprimirConstancia() {
     const p = compra && compra.pedido; if (!p) return;
     const z = $('#zonaImpresion');
-    z.innerHTML = '<div class="imp-cab"><div><h1>MEGA LAS MALVINAS</h1><div>Ferretería eléctrica · ' + esc(T.lugar) + '</div><div>WhatsApp ' + esc(T.telefonoVisible) + '</div></div><div style="text-align:right"><div>Constancia de pedido</div><div class="imp-cod">' + esc(p.codigo) + '</div><div>' + esc(p.fechaTexto) + '</div></div></div>'
+    const fig = document.createElement('figure'), lienzo = document.createElement('canvas'); fig.append(lienzo);
+    const qr = qrDelPedido(lienzo, p.codigo);
+    z.innerHTML = '<div class="imp-cab"><div><h1>MEGA LAS MALVINAS</h1><div>Ferretería eléctrica · ' + esc(T.lugar) + '</div><div>WhatsApp ' + esc(T.telefonoVisible) + '</div></div><div style="text-align:right;display:flex;gap:12px;align-items:center"><div><div>Constancia de pedido</div><div class="imp-cod">' + esc(p.codigo) + '</div><div>' + esc(p.fechaTexto) + '</div></div>' + (qr ? '<img src="' + qr + '" alt="" width="96" height="96">' : '') + '</div></div>'
       + '<p><b>Cliente:</b> ' + esc(p.cliente.nombre) + ' · <b>Celular:</b> ' + esc(p.cliente.celular) + ' · <b>Correo:</b> ' + esc(p.cliente.correo) + (p.cliente.dni ? ' · <b>DNI:</b> ' + esc(p.cliente.dni) : '') + '</p>'
       + '<p><b>Recojo:</b> ' + esc(p.recojo) + ' · <b>Pago:</b> ' + esc(p.pago.etiqueta) + (p.pago.operacion ? ' · <b>N° de operación:</b> ' + esc(p.pago.operacion) : '') + '</p>'
       + '<table><thead><tr><th>Código</th><th>Producto</th><th class="d">Cant.</th><th class="d">P. unit.</th><th class="d">Importe</th></tr></thead><tbody>' + p.items.map((i) => '<tr><td>' + esc(i.codigo) + '</td><td>' + esc(i.nombre) + '</td><td class="d">' + fmtCant(i.cant) + ' ' + esc(i.unidad) + '</td><td class="d">' + moneda(i.precio) + '</td><td class="d">' + moneda(i.importe) + '</td></tr>').join('') + '</tbody></table>'

@@ -22,10 +22,7 @@ Para usar tu propia foto (recomendado con el tiempo): guárdala cuadrada (~720 p
 ## 4. Yape con el monto incluido
 El QR de Yape usa el estándar EMVCo. La web toma el contenido del QR del dueño (`yape.emv`), le agrega el campo **54 (monto)** y recalcula el código de control. Cada compra muestra un QR propio con el total exacto y un botón para guardarlo (para quien compra desde el celular y escanea desde la galería).
 
-**Prueba obligatoria antes de anunciarlo:** escanea el QR de un pedido de S/ 1.00 con Yape.
-- Si Yape muestra S/ 1.00 ya escrito → listo.
-- Si no lo muestra, cambia `qrModo` de `'12'` a `'11'` en `config.js` y prueba otra vez.
-- Si con ninguno aparece el monto, el pago sigue funcionando: el cliente escribe el monto, que se muestra grande junto al QR.
+**Resultado probado:** Yape con cuenta personal lee el QR pero **no** completa el monto. Por eso la web muestra el monto grande con un botón **Copiar monto** y pide escribirlo. Para que el monto aparezca solo se necesita una cuenta de comercio (Yape para negocios / pasarela como Mercado Pago o Izipay).
 
 Yape no tiene una API pública para cuentas personales, así que **la confirmación del pago la hace la tienda** con el N.º de operación que registra el cliente. Para confirmación automática usa el punto 5.
 
@@ -37,6 +34,13 @@ GitHub Pages no puede guardar claves secretas, por eso hay un servidor mínimo e
 4. Copia la dirección del worker (`https://….workers.dev`) en `pasarela.url` de `js/config.js` y publica.
 
 Aparecerá la opción **Tarjeta u otros medios**: el cliente paga en la página segura de Mercado Pago, vuelve a la tienda y la web consulta al servidor si el pago fue **aprobado**. El servidor recalcula el total con los precios de `js/datos.js`, así que nadie puede pagar menos modificando la página. Prueba primero con las credenciales y tarjetas de prueba de Mercado Pago.
+
+## 5b. Pedidos en Google Sheets + programa C#
+Cada pedido tiene un código `MLM-AAMMDD-XXXX` y un **QR con ese código** (en la pantalla final y en la constancia PDF).
+1. Instala la hoja: sigue las instrucciones al inicio de `integraciones/google-apps-script/Codigo.gs` y pega la URL `/exec` en `hojaPedidos` de `js/config.js`.
+2. En tu programa C# agrega `integraciones/csharp/PedidosWeb.cs` (y si quieres la pantalla de ejemplo `FormPedidosWeb.cs`), y pon la misma URL y tu `CLAVE`.
+3. En caja: un lector de códigos USB (o escribirlo a mano) pone el código en la caja de texto → Enter → aparece el pedido con productos, N.º de operación y total. Verificas el pago en tu app de Yape y marcas *Pago verificado* / *Entregado*.
+La hoja recalcula el total con los precios publicados: si la columna `Coincide` es FALSO, alguien alteró precios en su navegador.
 
 ## 6. Publicar en GitHub Pages
 1. En GitHub crea el repositorio público **mega-las-malvinas**.

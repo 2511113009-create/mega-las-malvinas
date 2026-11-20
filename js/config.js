@@ -10,6 +10,10 @@ window.TIENDA = {
   // hay que abrirlo y pulsar "Activate Form". Desde ahí cada pedido llega a la bandeja.
   correoPedidos: '251.1113.009@unab.edu.pe',
 
+  // Registro de pedidos en Google Sheets (lo lee tu programa C#). URL de la Aplicación web de
+  // Apps Script que termina en /exec. Ver integraciones/google-apps-script/Codigo.gs. Vacío = desactivado.
+  hojaPedidos: '',
+
   // WhatsApp de atención (código de país + número, sin + ni espacios)
   whatsapp: '51992081815',
   telefonoVisible: '992 081 815',
@@ -23,8 +27,9 @@ window.TIENDA = {
     // Contenido del QR de Yape del dueño (leído de img/yape-qr.png). Con él la web genera,
     // en cada compra, un QR con el monto exacto incluido. Si cambias de QR, reemplaza este texto.
     emv: '000201010211393246721bdfa1785685a58210398e4ed7f55204561153036045802PE5906YAPERO6004Lima630417DD',
-    // '12' = QR dinámico con monto (recomendado). Si al escanear Yape no muestra el monto, prueba '11'.
-    qrModo: '12'
+    // Probado: Yape (cuenta personal) lee el QR pero NO completa el monto con '12'.
+    // '11' = QR estático igual al original, con el monto como dato extra (la web pide escribirlo igual).
+    qrModo: '11'
   },
 
   // Cobro automático con pasarela (opcional). Ver README → "Pagos con tarjeta".
