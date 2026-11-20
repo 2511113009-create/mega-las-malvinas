@@ -8,7 +8,7 @@ window.TIENDA = {
   // Se envía mediante la API de FormSubmit (https://formsubmit.co).
   // La primera vez, FormSubmit manda un correo de confirmación a esta dirección:
   // hay que abrirlo y pulsar "Activate Form". Desde ahí cada pedido llega a la bandeja.
-  correoPedidos: '',
+  correoPedidos: '251.1113.009@unab.edu.pe',
 
   // WhatsApp de atención (código de país + número, sin + ni espacios)
   whatsapp: '51992081815',
