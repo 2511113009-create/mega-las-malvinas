@@ -37,6 +37,9 @@ window.TIENDA = {
   // por ejemplo 'https://pagos-malvinas.tu-usuario.workers.dev'. Vacío = opción oculta.
   pasarela: {
     url: '',
+    // Public Key de PRODUCCIÓN de Mercado Pago (empieza con APP_USR-). Es pública, puede ir aquí.
+    // Con url + publicKey aparece "Yape automático": el monto se cobra solo, el cliente no lo escribe.
+    publicKey: '',
     nombre: 'Tarjeta, Yape u otros (Mercado Pago)'
   },
 

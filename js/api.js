@@ -151,11 +151,38 @@
     if (r.ok && !/^https:\/\//.test(r.url || '')) return {ok: false, detalle: 'respuesta inválida'};
     return r;
   }
+  // ---------- Yape automático (Mercado Pago Checkout API) ----------
+  let sdkMP = null;
+  function cargarSDK() {
+    if (window.MercadoPago) return Promise.resolve();
+    if (!sdkMP) sdkMP = new Promise((ok, mal) => {
+      const s = document.createElement('script'); s.src = 'https://sdk.mercadopago.com/js/v2';
+      s.onload = ok; s.onerror = () => { sdkMP = null; mal(new Error('sdk')); }; document.head.append(s);
+    });
+    return sdkMP;
+  }
+  // Devuelve el token de un solo uso a partir del celular y el código de aprobación de Yape
+  async function tokenYape(celular, otp) {
+    try {
+      await cargarSDK();
+      const mp = new window.MercadoPago(T.pasarela.publicKey);
+      const t = await mp.yape({otp: String(otp), phoneNumber: String(celular)}).create();
+      const token = t && (t.id || t.token || (typeof t === 'string' ? t : ''));
+      return token ? {ok: true, token} : {ok: false, motivo: 'sin-token'};
+    } catch (e) { return {ok: false, motivo: String(e && e.message || e)}; }
+  }
+  const pagarYape = (p, token) => llamar('/pagar-yape', {method: 'POST', body: JSON.stringify({
+    codigo: p.codigo, token,
+    items: p.items.map((i) => ({codigo: i.codigo, cant: i.cant})),
+    cliente: {nombre: p.cliente.nombre, correo: p.cliente.correo, celular: p.cliente.celular}
+  })});
+  const yapeAutoActivo = () => !!(urlPasarela() && T.pasarela.publicKey);
+
   const estadoPago = (codigo) => llamar('/estado?ref=' + encodeURIComponent(codigo), {method: 'GET', headers: {}});
   const EN_CURSO = 'mlm-en-curso';
   function guardarEnCurso(p) { try { const l = JSON.parse(localStorage.getItem(EN_CURSO) || '{}'); l[p.codigo] = p; const ks = Object.keys(l).slice(-5); localStorage.setItem(EN_CURSO, JSON.stringify(Object.fromEntries(ks.map((k) => [k, l[k]])))); } catch { /* sin almacenamiento */ } }
   function leerEnCurso(codigo) { try { return (JSON.parse(localStorage.getItem(EN_CURSO) || '{}'))[codigo] || null; } catch { return null; } }
 
   window.addEventListener('online', () => { reintentarPendientes(); });
-  window.API = {correoValido, enviarPedido, registrarEnHoja, enviarContacto, reintentarPendientes, waURL, mapaURL, mapaVerURL, mapaEmbedURL, copiar, compartir, crearPago, estadoPago, guardarEnCurso, leerEnCurso};
+  window.API = {correoValido, enviarPedido, registrarEnHoja, enviarContacto, reintentarPendientes, waURL, mapaURL, mapaVerURL, mapaEmbedURL, copiar, compartir, crearPago, estadoPago, guardarEnCurso, leerEnCurso, tokenYape, pagarYape, yapeAutoActivo};
 })();

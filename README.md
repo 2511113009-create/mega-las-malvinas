@@ -22,7 +22,14 @@ Para usar tu propia foto (recomendado con el tiempo): guárdala cuadrada (~720 p
 ## 4. Yape con el monto incluido
 El QR de Yape usa el estándar EMVCo. La web toma el contenido del QR del dueño (`yape.emv`), le agrega el campo **54 (monto)** y recalcula el código de control. Cada compra muestra un QR propio con el total exacto y un botón para guardarlo (para quien compra desde el celular y escanea desde la galería).
 
-**Resultado probado:** Yape con cuenta personal lee el QR pero **no** completa el monto. Por eso la web muestra el monto grande con un botón **Copiar monto** y pide escribirlo. Para que el monto aparezca solo se necesita una cuenta de comercio (Yape para negocios / pasarela como Mercado Pago o Izipay).
+**Resultado probado:** Yape con cuenta personal lee el QR pero **no** completa el monto. Por eso el QR muestra el monto grande con un botón **Copiar monto**.
+
+### Yape automático (el cliente NO escribe el monto)
+Con Mercado Pago, Yape se cobra con **celular + código de aprobación** (6 dígitos que el cliente ve en el inicio de su app Yape). La tienda fija el monto exacto y el pago queda **aprobado al instante**, con su N.º de operación. Para activarlo:
+1. Completa el punto 5 (cuenta de Mercado Pago + servidor en Cloudflare).
+2. En Mercado Pago → Tus integraciones → Credenciales de producción, copia la **Public Key** (`APP_USR-…`) en `pasarela.publicKey` de `js/config.js`, y la URL del worker en `pasarela.url`.
+3. Prueba con credenciales de prueba: celular `111111111`, código `123456` → aprobado.
+Aparecerá **Yape automático** como primera opción; el QR queda como alternativa. Límite: hasta S/ 2,000 por pago (según el límite diario del cliente en Yape).
 
 Yape no tiene una API pública para cuentas personales, así que **la confirmación del pago la hace la tienda** con el N.º de operación que registra el cliente. Para confirmación automática usa el punto 5.
 

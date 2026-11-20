@@ -474,6 +474,7 @@
 
   // ---------- Compra ----------
   const METODOS = {
+    yapeauto: {nombre: 'Yape (cobro automático)', req: false, enLinea: true},
     yape: {nombre: 'Yape', req: true},
     pasarela: {nombre: (T.pasarela && T.pasarela.nombre) || 'Pago en línea', req: false, enLinea: true},
     transferencia: {nombre: 'Transferencia bancaria', req: true},
@@ -511,7 +512,7 @@
   let compra = null;
   function nuevaCompra() {
     const c = leerCliente();
-    return {paso: 1, enviando: false, datos: {nombre: c.nombre || '', celular: c.celular || '', correo: c.correo || '', dni: c.dni || '', recojo: 'Hoy', notas: '', ok: false}, metodo: 'yape', op: '', pedido: null, resultado: null};
+    return {paso: 1, enviando: false, datos: {nombre: c.nombre || '', celular: c.celular || '', correo: c.correo || '', dni: c.dni || '', recojo: 'Hoy', notas: '', ok: false}, metodo: API.yapeAutoActivo() ? 'yapeauto' : 'yape', op: '', pedido: null, resultado: null};
   }
   function abrirCompra() {
     if (!carrito.size) { aviso('Tu carrito está vacío.'); return; }
@@ -544,15 +545,16 @@
     } else if (c.paso === 2) {
       cont.innerHTML = cerrar + '<div class="compra">' + pasosHTML(2) + '<div class="compra-grid"><form id="formPago" novalidate><h2 id="dlgPagoTit">Elige cómo pagar</h2><p class="sub">Total a pagar: <b>' + moneda(totalCent() / 100) + '</b></p>'
         + '<div class="metodos" role="radiogroup" aria-label="Método de pago">'
-        + metodoHTML('yape', '<span class="m-ico yape" aria-hidden="true">Y</span>', 'Yape', 'Escanea el QR o yapea al ' + T.yape.numeroVisible, '<span class="rec">Más rápido</span>')
+        + (API.yapeAutoActivo() ? metodoHTML('yapeauto', '<span class="m-ico yape" aria-hidden="true">Y</span>', 'Yape automático', 'Solo tu celular y el código de aprobación: el monto se cobra solo', '<span class="rec">Recomendado</span>') : '')
+        + metodoHTML('yape', '<span class="m-ico yape" aria-hidden="true">Y</span>', API.yapeAutoActivo() ? 'Yape con QR' : 'Yape', 'Escanea el QR o yapea al ' + T.yape.numeroVisible + (API.yapeAutoActivo() ? ' (escribes el monto)' : ''), API.yapeAutoActivo() ? '' : '<span class="rec">Más rápido</span>')
         + (pasarelaActiva() ? metodoHTML('pasarela', '<span class="m-ico" aria-hidden="true">' + ico('shield') + '</span>', 'Tarjeta u otros medios', 'Pago seguro con Mercado Pago, confirmación automática', '') : '')
         + metodoHTML('transferencia', '<span class="m-ico" aria-hidden="true">' + ico('banco') + '</span>', 'Transferencia bancaria', 'Cuenta y CCI en soles', '')
         + metodoHTML('tienda', '<span class="m-ico" aria-hidden="true">' + ico('efectivo') + '</span>', 'Pagar en tienda', 'Efectivo, Plin o tarjeta al recoger', '') + '</div>'
         + '<div id="panelPago">' + panelPagoHTML() + '</div><div id="errPago" role="alert"></div>'
-        + '<div class="compra-pie"><button class="btn btn-sec" type="button" data-accion="volver-datos">' + ico('izq') + ' Cambiar datos</button><button class="btn btn-rojo" type="submit" id="btnConfirmar">Confirmar pedido</button></div></form>' + resumenHTML() + '</div></div>';
+        + '<div class="compra-pie"><button class="btn btn-sec" type="button" data-accion="volver-datos">' + ico('izq') + ' Cambiar datos</button><button class="btn btn-rojo" type="submit" id="btnConfirmar">' + textoBoton() + '</button></div></form>' + resumenHTML() + '</div></div>';
     } else {
       const ped = c.pedido, r = c.resultado;
-      const ped2 = ped, enLinea = ped.pago.metodo === 'pasarela', est = ped.pago.estado;
+      const ped2 = ped, enLinea = !!(METODOS[ped.pago.metodo] || {}).enLinea, est = ped.pago.estado;
       if (enLinea && est !== 'approved') {
         const revision = est === 'pending' || est === 'in_process' || est === 'authorized';
         cont.innerHTML = cerrar + '<div class="compra">' + pasosHTML(2) + '<div class="exito"><div class="circ ambar">' + ico('alerta') + '</div><h2 id="dlgPagoTit">' + (revision ? 'Tu pago está en revisión' : 'El pago no se completó') + '</h2>'
@@ -581,8 +583,10 @@
     if (!canvas || !window.YAPE_QR || !window.qrcode) { if (canvas) canvas.closest('figure').remove(); return null; }
     try { YAPE_QR.dibujar(canvas, codigo, '', {color: '#0c1a3d', lado: 260}); return canvas.toDataURL('image/png'); } catch { canvas.closest('figure').remove(); return null; }
   }
+  const textoBoton = () => compra.metodo === 'yapeauto' ? 'Pagar ' + moneda(totalCent() / 100) + ' con Yape' : compra.metodo === 'pasarela' ? 'Ir a pagar' : 'Confirmar pedido';
   function siguientePaso(p) {
     if (p.pago.metodo === 'tienda') return 'paga en tienda al recoger tu pedido y presenta tu código.';
+    if (p.pago.metodo === 'yapeauto') return 'tu pago con Yape ya está confirmado (operación <b>' + esc(p.pago.operacion) + '</b>). Te avisaremos cuando tu pedido esté listo para recoger.';
     if (p.pago.metodo === 'pasarela') return p.pago.estado === 'approved' ? 'tu pago ya está confirmado. Te avisaremos cuando tu pedido esté listo para recoger.' : 'cuando Mercado Pago confirme tu pago te avisaremos por WhatsApp.';
     return 'la tienda verificará tu pago con el N° de operación <b>' + esc(p.pago.operacion) + '</b> antes de entregarte los productos.';
   }
@@ -603,6 +607,13 @@
         + '<ol class="instr">' + pasos + '</ol>'
         + (dinamico ? '<p class="nota-movil">' + ico('info') + '<span>¿Compras desde tu celular? Toca <b>Guardar QR</b> y en Yape elige <b>Escanear → Galería</b> para leerlo desde tus fotos.</span></p>' : '')
         + '</div></div>' + campoOp('Ej.: 12345678') + '</div>';
+    }
+    if (m === 'yapeauto') {
+      return '<div class="panel-pago yape"><div class="pp-monto"><span>Se cobrará exactamente</span><b>' + monto + '</b></div>'
+        + '<ol class="instr"><li>Abre tu app <b>Yape</b> y en el inicio toca <b>Código de aprobación</b> (6 dígitos, dura unos minutos).</li><li>Escribe abajo tu celular de Yape y ese código.</li><li>Pulsa <b>Pagar ' + monto + '</b>. No tienes que escribir el monto: se cobra solo.</li></ol>'
+        + '<div class="dos" style="margin-top:14px"><div class="campo"><label for="fYCel">Celular con Yape</label><input id="fYCel" name="ycel" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="12" placeholder="9XX XXX XXX" value="' + esc(compra.datos.celular || '') + '"><span class="error" id="eYCel"></span></div>'
+        + '<div class="campo"><label for="fYOtp">Código de aprobación</label><input id="fYOtp" name="yotp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 dígitos" class="otp"><span class="error" id="eYOtp"></span></div></div>'
+        + '<p class="aviso-pago">' + ico('shield') + '<span>Pago procesado por Mercado Pago. La tienda no ve ni guarda tu código. Tu límite diario de Yape aplica (hasta S/ 2,000).</span></p></div>';
     }
     if (m === 'pasarela') {
       return '<div class="panel-pago"><div class="pp-monto"><span>Total a pagar</span><b>' + monto + '</b></div><p class="aviso-pago">' + ico('shield') + '<span>Te llevaremos a la página segura de <b>Mercado Pago</b> para pagar con tarjeta de crédito o débito u otros medios disponibles. La tienda no ve ni guarda los datos de tu tarjeta. Al terminar volverás aquí y verás la confirmación del pago.</span></p></div>';
@@ -655,6 +666,7 @@
       if (!ok) { form.op.focus(); return; }
     }
     if (m === 'pasarela') { pagarEnLinea(); return; }
+    if (m === 'yapeauto') { pagarYapeAuto(form); return; }
     compra.enviando = true;
     const btn = $('#btnConfirmar'); btn.disabled = true; btn.innerHTML = '<span class="girar" aria-hidden="true"></span> Enviando pedido…';
     const pedido = construirPedido();
@@ -680,6 +692,33 @@
     }
     API.guardarEnCurso(pedido);
     location.href = r.url;
+  }
+  // Yape automático: celular + código de aprobación → token (MercadoPago.js) → el servidor cobra el total exacto
+  async function pagarYapeAuto(form) {
+    const cel = limpiarCel(form.ycel.value.trim()), otp = form.yotp.value.replace(/\D/g, '');
+    const v = [
+      error('eYCel', rxCel.test(cel) ? '' : 'Ingresa el celular de 9 dígitos con el que usas Yape.', form.ycel),
+      error('eYOtp', /^\d{6}$/.test(otp) ? '' : 'El código de aprobación tiene 6 dígitos. Lo ves en el inicio de tu app Yape.', form.yotp)
+    ];
+    if (!v.every(Boolean)) { (v[0] ? form.yotp : form.ycel).focus(); return; }
+    compra.enviando = true;
+    const btn = $('#btnConfirmar'), txt = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="girar" aria-hidden="true"></span> Cobrando con Yape…';
+    const fallo = (msg) => {
+      compra.enviando = false; btn.disabled = false; btn.innerHTML = txt;
+      form.yotp.value = ''; $('#errPago').innerHTML = '<div class="msj mal">' + esc(msg) + '</div>'; form.yotp.focus();
+    };
+    const t = await API.tokenYape(cel, otp);
+    if (!t.ok) { fallo('No pudimos validar tu código de Yape. Genera uno nuevo en la app e inténtalo otra vez.'); return; }
+    const pedido = construirPedido();
+    const r = await API.pagarYape(pedido, t.token);
+    if (!r.ok) { fallo(r.detalle && !/^HTTP|Error|Abort/.test(r.detalle) ? r.detalle : 'No pudimos conectar con el servicio de pago. Intenta de nuevo o paga con Yape QR.'); return; }
+    if (r.estado !== 'approved') { fallo(r.mensaje || 'Yape rechazó el pago. Genera un código nuevo e inténtalo otra vez.'); return; }
+    pedido.pago.operacion = String(r.id || ''); pedido.pago.estado = 'approved';
+    guardarCliente({nombre: pedido.cliente.nombre, celular: pedido.cliente.celular, correo: pedido.cliente.correo, dni: pedido.cliente.dni});
+    let envio; try { envio = await API.enviarPedido(pedido); } catch { envio = {ok: false, motivo: 'red'}; }
+    compra.pedido = pedido; compra.resultado = {ok: true, correo: envio.ok}; compra.paso = 3; compra.enviando = false;
+    carrito.clear(); guardar(); $$('[data-ctl]').forEach((el) => { const p = porId.get(+el.dataset.ctl); if (p) el.innerHTML = el.dataset.grande ? ctlGrande(p) : ctl(p); }); actualizarContadores();
+    renderCompra(); $('#dlgPagoCont').scrollTop = 0;
   }
   async function volverDePago(codigo) {
     const pedido = API.leerEnCurso(codigo);
@@ -787,7 +826,7 @@
     if (e.target.name === 'metodo' && compra) {
       const f = e.target.form; compra.op = f.op ? f.op.value : compra.op; compra.metodo = e.target.value;
       $('#panelPago').innerHTML = panelPagoHTML(); pintarIconos($('#panelPago')); montarQR();
-      $('#btnConfirmar').textContent = compra.metodo === 'pasarela' ? 'Ir a pagar' : 'Confirmar pedido';
+      $('#btnConfirmar').textContent = textoBoton();
     }
   });
   async function enviarContacto(f) {
