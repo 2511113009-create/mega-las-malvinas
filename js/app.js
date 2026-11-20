@@ -88,11 +88,16 @@
 
   // ---------- Piezas de interfaz ----------
   const unidadTxt = (p) => (p.unidad === 'unidad' ? 'unidad' : p.unidad);
-  function imagen(p) {
-    // Foto propia por código (img/productos/CODIGO.webp) o una foto compartida por tipo de producto (T.fotosGrupo)
-    const archivo = T.fotosReales && T.fotosReales.includes(p.codigo) ? 'img/productos/' + p.codigo + '.webp' : (T.fotosGrupo && T.fotosGrupo[p.grupo]) || '';
-    const real = archivo ? '<img class="foto-real" src="' + esc(archivo) + '" alt="" loading="lazy" decoding="async">' : '';
-    return ILUS.svg(p) + real;
+  // Foto del producto: propia (fotosReales), por tipo (fotosGrupo) o la de js/fotos.js. Sin foto, queda la ilustración.
+  function archivoFoto(p) {
+    if (T.fotosReales && T.fotosReales.includes(p.codigo)) return 'img/productos/' + p.codigo + '.webp';
+    return (T.fotosGrupo && T.fotosGrupo[p.grupo]) || (window.FOTOS && window.FOTOS[p.codigo]) || '';
+  }
+  function imagen(p, prioridad) {
+    const archivo = archivoFoto(p);
+    if (!archivo) return ILUS.svg(p);
+    // La ilustración queda debajo como respaldo si la foto no carga
+    return ILUS.svg(p) + '<img class="foto-real" src="' + esc(archivo) + '" alt="' + esc(p.nombre) + '" width="720" height="720"' + (prioridad ? ' fetchpriority="high"' : ' loading="lazy"') + ' decoding="async" onerror="this.remove()">';
   }
   function ctl(p) {
     const n = carrito.get(p.id);
@@ -103,9 +108,9 @@
     const on = favoritos.has(p.id);
     return '<button class="icon-btn fav ' + extra + '" type="button" data-accion="fav" data-id="' + p.id + '" aria-pressed="' + on + '" aria-label="' + (on ? 'Quitar de favoritos' : 'Guardar en favoritos') + ': ' + esc(p.nombre) + '">' + ico('heart') + '</button>';
   };
-  function foto(p, accion = true) {
+  function foto(p, accion = true, prioridad = false) {
     const chip = ILUS.chip(p), et = ETIQUETA_UNIDAD[p.unidad];
-    const cont = imagen(p) + (et ? '<span class="etq">' + et + '</span>' : '') + (chip ? '<span class="dato">' + esc(chip) + '</span>' : '');
+    const cont = imagen(p, prioridad) +(et ? '<span class="etq">' + et + '</span>' : '') + (chip ? '<span class="dato">' + esc(chip) + '</span>' : '');
     return accion ? '<button class="foto" type="button" data-accion="ver" data-id="' + p.id + '" aria-label="Ver detalle de ' + esc(p.nombre) + '">' + cont + '</button>' : '<div class="foto">' + cont + '</div>';
   }
   function tarjeta(p) {
@@ -145,7 +150,7 @@
     const res = buscar(q);
     sugItems = res.slice(0, 6);
     if (!sugItems.length) listaSug.innerHTML = '<li class="sug-vacio" role="presentation">Sin resultados para «' + esc(q) + '». Prueba con otra palabra.</li>';
-    else listaSug.innerHTML = sugItems.map((p, i) => '<li role="option" id="sug-' + i + '" data-id="' + p.id + '" aria-selected="false"><span class="mini">' + ILUS.svg(p) + '</span><span class="sug-t"><b>' + resaltar(p.nombre, q) + '</b><small>' + esc(catDe(p).corto) + ' · ' + esc(p.codigo) + '</small></span><span class="sug-p">' + moneda(p.precio) + '</span></li>').join('')
+    else listaSug.innerHTML = sugItems.map((p, i) => '<li role="option" id="sug-' + i + '" data-id="' + p.id + '" aria-selected="false"><span class="mini">' + imagen(p) + '</span><span class="sug-t"><b>' + resaltar(p.nombre, q) + '</b><small>' + esc(catDe(p).corto) + ' · ' + esc(p.codigo) + '</small></span><span class="sug-p">' + moneda(p.precio) + '</span></li>').join('')
       + (res.length > 6 ? '<li class="sug-todos" role="option" id="sug-todos" data-todos="1" aria-selected="false">Ver los ' + res.length + ' resultados</li>' : '');
     listaSug.hidden = false; inputQ.setAttribute('aria-expanded', 'true'); sugActual = -1;
   }
@@ -202,6 +207,7 @@
     const {ruta, p} = parseHash();
     clearInterval(timerPortada);
     let r = ruta, productoId = 0;
+    if (ruta.startsWith('pago/')) { vistaInicio(); vistaActual = 'inicio'; pintarNav('inicio', new URLSearchParams()); pintarIconos(); volverDePago(ruta.slice(5)); return; }
     if (ruta.startsWith('producto/')) { productoId = +ruta.split('/')[1]; r = vistaActual || 'inicio'; }
     else if (ANCLAS.includes(ruta)) r = 'inicio';
     else if (!['inicio', 'catalogo', 'favoritos'].includes(ruta)) r = 'inicio';
@@ -233,6 +239,8 @@
     {img: 'img/portada-3.webp', pos: '80% 50%', kicker: 'Iluminación', t: 'Luz <em>LED</em> para cada espacio', s: 'Focos, reflectores, paneles y lámparas decorativas.', cat: 1, cta: 'Ver iluminación',
       alt: 'Foco de filamento encendido colgando en un taller'}
   ];
+  // Foto de fondo de cada tarjeta de categoría (producto representativo)
+  const FOTO_CAT = {1: 'img/productos/bulb-3.jpg', 2: 'img/productos/spool-0.jpg', 3: 'img/productos/mcb-1.jpg', 4: 'img/productos/drill-1.jpg', 5: 'img/productos/anchors-3.jpg'};
   const desde = (cat) => moneda(Math.min(...PRODUCTOS.filter((p) => p.cat === cat).map((p) => p.precio)));
 
   function vistaInicio() {
@@ -247,9 +255,9 @@
       + '<div class="slide-ctl"><button class="flecha" type="button" data-accion="slide-prev" aria-label="Diapositiva anterior">' + ico('izq') + '</button><div class="puntos" id="puntos">' + SLIDES.map((s, i) => '<button type="button" data-accion="slide-ir" data-i="' + i + '" aria-label="Ir a la diapositiva ' + (i + 1) + '"' + (i === 0 ? ' aria-current="true"' : '') + '></button>').join('') + '</div><button class="flecha" type="button" data-accion="slide-next" aria-label="Diapositiva siguiente">' + ico('der') + '</button></div></section>'
       + '<div class="confianza">' + confianza.map((c) => '<div>' + ico(c[0]) + '<p><b>' + c[1] + '</b><span>' + c[2] + '</span></p></div>').join('') + '</div>'
       + '<section class="seccion" id="categorias"><div class="sec-cab"><div><h2 class="titulo">Explora por categoría</h2><p>Encuentra rápido lo que necesitas.</p></div></div><div class="cat-grid">'
-      + CATEGORIAS.map((c) => '<a class="cat-card" href="#catalogo?cat=' + c.id + '"><span class="cat-ico">' + ico(c.icono) + '</span><span><strong>' + c.nombre + '</strong><small>' + c.texto + '</small></span><span class="cuenta">' + PRODUCTOS.filter((p) => p.cat === c.id).length + ' productos</span></a>').join('') + '</div></section>'
+      + CATEGORIAS.map((c) => '<a class="cat-card" href="#catalogo?cat=' + c.id + '">' + (FOTO_CAT[c.id] ? '<img class="cat-foto" src="' + FOTO_CAT[c.id] + '" alt="" loading="lazy" decoding="async" width="720" height="720">' : '') + '<span class="cat-ico">' + ico(c.icono) + '</span><span><strong>' + c.nombre + '</strong><small>' + c.texto + '</small></span><span class="cuenta">' + PRODUCTOS.filter((p) => p.cat === c.id).length + ' productos</span></a>').join('') + '</div></section>'
       + '<section class="seccion"><div class="sec-cab"><div><h2 class="titulo">Productos destacados</h2></div><a class="enlace" href="#catalogo">Ver catálogo completo ' + ico('der') + '</a></div><div class="rejilla">' + DESTACADOS.map((id) => tarjeta(porId.get(id))).join('') + '</div></section>'
-      + '<section class="seccion" id="como-comprar"><div class="sec-cab"><div><h2 class="titulo">Cómo comprar</h2><p>Tres pasos, sin complicaciones.</p></div></div><div class="pasos">'
+      + '<section class="seccion seccion-foto" id="como-comprar"><div class="sec-cab"><div><h2 class="titulo">Cómo comprar</h2><p>Tres pasos, sin complicaciones.</p></div></div><div class="pasos">'
       + '<div class="paso">' + ico('cart') + '<h3>Elige tus productos</h3><p>Busca por nombre o código, agrégalos al carrito y ajusta las cantidades.</p></div>'
       + '<div class="paso">' + ico('wallet') + '<h3>Paga con Yape</h3><p>Escanea el QR o yapea al número de la tienda y registra tu número de operación.</p></div>'
       + '<div class="paso">' + ico('store') + '<h3>Recoge en tienda</h3><p>Te escribimos para confirmar tu pedido. Presenta tu código al recoger.</p></div></div>'
@@ -257,6 +265,7 @@
       + '<section class="seccion" id="contacto"><div class="contacto"><div class="panel"><h2>Estamos en Barranca</h2><p>Consulta medidas, disponibilidad o pide ayuda para elegir el producto correcto.</p>'
       + '<ul class="datos-lista"><li>' + ico('pin') + '<p><b>Ubicación</b><span>Barranca, Lima, Perú</span></p></li><li>' + ico('whatsapp') + '<p><b>WhatsApp</b><span data-tel></span></p></li><li>' + ico('wallet') + '<p><b>Yape</b><span data-tel></span></p></li></ul>'
       + '<div class="fila-btn"><a class="btn btn-wa" href="#" data-wa target="_blank" rel="noopener">' + ico('whatsapp') + ' Escribir por WhatsApp</a><a class="btn btn-sec" href="#" data-mapa target="_blank" rel="noopener">' + ico('route') + ' Cómo llegar</a></div>'
+      + '<p class="distancia"><button class="enlace" type="button" data-accion="distancia">' + ico('pin') + ' ¿A qué distancia estoy de la tienda?</button><span id="resDistancia" role="status"></span></p>'
       + '<div class="mapa"><iframe title="Mapa con la ubicación de Mega Las Malvinas" src="' + esc(API.mapaEmbedURL()) + '" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe><a class="enlace" href="' + esc(API.mapaVerURL()) + '" target="_blank" rel="noopener">Abrir en Google Maps ' + ico('der') + '</a></div></div>'
       + '<form class="panel" id="formContacto" novalidate><h2>Escríbenos</h2><p>Déjanos tu mensaje y tu correo; te respondemos lo antes posible.</p>'
       + '<div class="campo"><label for="cNombre">Nombre</label><input id="cNombre" name="nombre" type="text" autocomplete="name" maxlength="80" required><span class="error" id="ecNombre"></span></div>'
@@ -386,7 +395,7 @@
     const p = porId.get(id); if (!p) return;
     const rel = PRODUCTOS.filter((x) => x.id !== id && x.cat === p.cat && x.grupo === p.grupo).concat(PRODUCTOS.filter((x) => x.id !== id && x.cat === p.cat && x.grupo !== p.grupo)).slice(0, 4);
     $('#dlgProductoCont').innerHTML = '<button class="icon-btn cerrar" type="button" data-accion="cerrar" aria-label="Cerrar">' + ico('close') + '</button><div class="prod-det">'
-      + foto(p, false) + '<div class="prod-info-g"><span class="kicker">' + esc(catDe(p).nombre) + ' · ' + esc(p.codigo) + '</span><h2 id="dlgProductoTit">' + esc(p.nombre) + '</h2><p class="desc">' + esc(p.desc) + '</p>'
+      + foto(p, false, true) + '<div class="prod-info-g"><span class="kicker">' + esc(catDe(p).nombre) + ' · ' + esc(p.codigo) + '</span><h2 id="dlgProductoTit">' + esc(p.nombre) + '</h2><p class="desc">' + esc(p.desc) + '</p>'
       + '<div class="prod-precio"><span class="precio">' + moneda(p.precio) + '</span><small class="nota">/ ' + esc(unidadTxt(p)) + '</small></div><p class="nota">IGV incluido · Disponibilidad confirmada al recibir tu pedido.</p>'
       + '<dl class="specs"><div><dt>Código</dt><dd>' + esc(p.codigo) + '</dd></div><div><dt>Categoría</dt><dd>' + esc(catDe(p).nombre) + '</dd></div><div><dt>Tipo</dt><dd>' + esc(p.grupo) + '</dd></div><div><dt>Se vende por</dt><dd>' + esc(unidadTxt(p)) + '</dd></div></dl>'
       + '<div class="prod-acc"><div data-ctl="' + p.id + '" data-grande="1">' + ctlGrande(p) + '</div>' + botonFav(p) + '<button class="icon-btn" type="button" data-accion="compartir" data-id="' + p.id + '" aria-label="Compartir este producto">' + ico('share') + '</button></div>'
@@ -465,14 +474,49 @@
 
   // ---------- Compra ----------
   const METODOS = {
+    yapeauto: {nombre: 'Yape (cobro automático)', req: false, enLinea: true},
     yape: {nombre: 'Yape', req: true},
+    pasarela: {nombre: (T.pasarela && T.pasarela.nombre) || 'Pago en línea', req: false, enLinea: true},
     transferencia: {nombre: 'Transferencia bancaria', req: true},
     tienda: {nombre: 'Pago en tienda (efectivo, Plin o tarjeta)', req: false}
   };
+  const pasarelaActiva = () => !!(T.pasarela && /^https:\/\//.test(T.pasarela.url || ''));
+
+  // ---------- QR de Yape con monto ----------
+  let qrValido = null;
+  function qrYapeDisponible() {
+    if (qrValido === null) qrValido = !!(window.YAPE_QR && window.qrcode && T.yape.emv && window.YAPE_QR.validar(T.yape.emv));
+    return qrValido;
+  }
+  function montarQR() {
+    const cv = $('#qrYape'); if (!cv || !qrYapeDisponible()) return;
+    const total = totalCent() / 100;
+    try {
+      const emv = YAPE_QR.conMonto(T.yape.emv, total, T.yape.qrModo);
+      YAPE_QR.dibujar(cv, emv, moneda(total));
+      cv.dataset.monto = total.toFixed(2);
+    } catch (e) {
+      console.warn('[tienda] No se pudo generar el QR con monto', e);
+      cv.closest('.qr').outerHTML = '<div class="qr"><img src="' + esc(T.yape.qr) + '" alt="Código QR de Yape" width="506" height="506"></div>';
+    }
+  }
+  function guardarQR() {
+    const cv = $('#qrYape'); if (!cv) return;
+    cv.toBlob((b) => {
+      if (!b) { aviso('No se pudo guardar el QR.'); return; }
+      const url = URL.createObjectURL(b), a = document.createElement('a');
+      a.href = url; a.download = 'Yape-Mega-Las-Malvinas-S' + cv.dataset.monto + '.png'; document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 8000); aviso('QR guardado en tus descargas.');
+    }, 'image/png');
+  }
+  // Consentimiento para el tratamiento de datos personales (Ley N.° 29733). Es obligatorio para comprar en línea.
+  // Si cambias el texto, cambia también la versión: así queda claro qué aceptó cada cliente.
+  const VERSION_PRIVACIDAD = '2026-11-20';
+  const TEXTO_CONSENTIMIENTO = 'Acepto la política de privacidad y autorizo a Mega Las Malvinas a guardar y usar mi nombre, celular, correo y DNI para gestionar mi pedido, contactarme y registrarme como cliente (Ley N.° 29733).';
   let compra = null;
   function nuevaCompra() {
     const c = leerCliente();
-    return {paso: 1, enviando: false, datos: {nombre: c.nombre || '', celular: c.celular || '', correo: c.correo || '', dni: c.dni || '', recojo: 'Hoy', notas: '', ok: false}, metodo: 'yape', op: '', pedido: null, resultado: null};
+    return {paso: 1, enviando: false, datos: {nombre: c.nombre || '', celular: c.celular || '', correo: c.correo || '', dni: c.dni || '', recojo: 'Hoy', notas: '', ok: false}, metodo: API.yapeAutoActivo() ? 'yapeauto' : 'yape', op: '', pedido: null, resultado: null};
   }
   function abrirCompra() {
     if (!carrito.size) { aviso('Tu carrito está vacío.'); return; }
@@ -499,38 +543,116 @@
         + '<div class="dos"><div class="campo"><label for="fDni">DNI <span class="op">(opcional, para tu comprobante)</span></label><input id="fDni" name="dni" type="text" inputmode="numeric" maxlength="8" placeholder="8 dígitos" value="' + esc(d.dni) + '"><span class="error" id="eDni"></span></div>'
         + '<div class="campo"><label for="fRecojo">¿Cuándo recoges?</label><select id="fRecojo" name="recojo">' + ['Hoy', 'Mañana', 'En los próximos días'].map((o) => '<option' + (d.recojo === o ? ' selected' : '') + '>' + o + '</option>').join('') + '</select></div></div>'
         + '<div class="campo"><label for="fNotas">Notas para la tienda <span class="op">(opcional)</span></label><textarea id="fNotas" name="notas" maxlength="200" placeholder="Por ejemplo: color del cable, medidas, hora aproximada">' + esc(d.notas) + '</textarea></div>'
-        + '<label class="check"><input type="checkbox" id="fAcepto" name="ok"' + (d.ok ? ' checked' : '') + '><span>Acepto que Mega Las Malvinas use estos datos para gestionar mi pedido y contactarme.</span></label><span class="error" id="eAcepto" style="display:block;margin:-8px 0 12px"></span>'
+        + '<label class="check"><input type="checkbox" id="fAcepto" name="ok" required aria-describedby="eAcepto"' + (d.ok ? ' checked' : '') + '><span>' + TEXTO_CONSENTIMIENTO + ' <a href="privacidad.html" target="_blank" rel="noopener">Leer la política de privacidad</a></span></label><span class="error" id="eAcepto" style="display:block;margin:-8px 0 12px"></span>'
         + '<div class="compra-pie"><button class="btn btn-sec" type="button" data-accion="volver-carrito">' + ico('izq') + ' Volver al carrito</button><button class="btn btn-rojo" type="submit">Continuar al pago ' + ico('der') + '</button></div></form>' + resumenHTML() + '</div></div>';
       setTimeout(() => $('#fNombre') && $('#fNombre').focus(), 60);
     } else if (c.paso === 2) {
       cont.innerHTML = cerrar + '<div class="compra">' + pasosHTML(2) + '<div class="compra-grid"><form id="formPago" novalidate><h2 id="dlgPagoTit">Elige cómo pagar</h2><p class="sub">Total a pagar: <b>' + moneda(totalCent() / 100) + '</b></p>'
         + '<div class="metodos" role="radiogroup" aria-label="Método de pago">'
-        + metodoHTML('yape', '<span class="m-ico yape" aria-hidden="true">Y</span>', 'Yape', 'Escanea el QR o yapea al ' + T.yape.numeroVisible, '<span class="rec">Más rápido</span>')
+        + (API.yapeAutoActivo() ? metodoHTML('yapeauto', '<span class="m-ico yape" aria-hidden="true">Y</span>', 'Yape automático', 'Solo tu celular y el código de aprobación: el monto se cobra solo', '<span class="rec">Recomendado</span>') : '')
+        + metodoHTML('yape', '<span class="m-ico yape" aria-hidden="true">Y</span>', API.yapeAutoActivo() ? 'Yape con QR' : 'Yape', 'Escanea el QR o yapea al ' + T.yape.numeroVisible + (API.yapeAutoActivo() ? ' (escribes el monto)' : ''), API.yapeAutoActivo() ? '' : '<span class="rec">Más rápido</span>')
+        + (pasarelaActiva() ? metodoHTML('pasarela', '<span class="m-ico" aria-hidden="true">' + ico('shield') + '</span>', 'Tarjeta u otros medios', 'Pago seguro con Mercado Pago, confirmación automática', '') : '')
         + metodoHTML('transferencia', '<span class="m-ico" aria-hidden="true">' + ico('banco') + '</span>', 'Transferencia bancaria', 'Cuenta y CCI en soles', '')
         + metodoHTML('tienda', '<span class="m-ico" aria-hidden="true">' + ico('efectivo') + '</span>', 'Pagar en tienda', 'Efectivo, Plin o tarjeta al recoger', '') + '</div>'
         + '<div id="panelPago">' + panelPagoHTML() + '</div><div id="errPago" role="alert"></div>'
-        + '<div class="compra-pie"><button class="btn btn-sec" type="button" data-accion="volver-datos">' + ico('izq') + ' Cambiar datos</button><button class="btn btn-rojo" type="submit" id="btnConfirmar">Confirmar pedido</button></div></form>' + resumenHTML() + '</div></div>';
+        + '<div class="compra-pie"><button class="btn btn-sec" type="button" data-accion="volver-datos">' + ico('izq') + ' Cambiar datos</button><button class="btn btn-rojo" type="submit" id="btnConfirmar">' + textoBoton() + '</button></div></form>' + resumenHTML() + '</div></div>';
     } else {
-      const ped = c.pedido, r = c.resultado, ok = r && r.ok;
-      const ped2 = ped;
-      cont.innerHTML = cerrar + '<div class="compra">' + pasosHTML(3) + '<div class="exito"><div class="circ' + (ok ? '' : ' ambar') + '">' + ico(ok ? 'check' : 'alerta') + '</div><h2 id="dlgPagoTit">' + (ok ? '¡Pedido recibido!' : 'Pedido guardado') + '</h2>'
+      const ped = c.pedido, r = c.resultado;
+      const ped2 = ped, enLinea = !!(METODOS[ped.pago.metodo] || {}).enLinea, est = ped.pago.estado;
+      if (enLinea && est !== 'approved') {
+        const revision = est === 'pending' || est === 'in_process' || est === 'authorized';
+        cont.innerHTML = cerrar + '<div class="compra">' + pasosHTML(2) + '<div class="exito"><div class="circ ambar">' + ico('alerta') + '</div><h2 id="dlgPagoTit">' + (revision ? 'Tu pago está en revisión' : 'El pago no se completó') + '</h2>'
+          + '<p>Pedido <b>' + esc(ped.codigo) + '</b> · ' + moneda(ped.total) + '</p>'
+          + '<div class="msj mal">' + (revision ? 'Mercado Pago está procesando tu pago. Te escribiremos al <b>' + esc(ped.cliente.celular) + '</b> apenas se confirme; no necesitas pagar de nuevo.' : 'No se realizó ningún cobro. Tus productos siguen en el carrito: puedes intentar de nuevo o pagar con Yape.') + '</div>'
+          + '<div class="exito-acc" style="max-width:360px;margin:16px auto 0">' + (revision ? '<a class="btn btn-wa btn-block" href="' + API.waURL(mensajePedido(ped)) + '" target="_blank" rel="noopener">' + ico('whatsapp') + ' Avisar a la tienda</a>' : '<button class="btn btn-rojo btn-block" type="button" data-accion="pagar">Intentar de nuevo</button>')
+          + '<button class="btn btn-sec btn-block" type="button" data-accion="cerrar-y-seguir">Seguir comprando</button></div></div></div>';
+        pintarIconos(cont); return;
+      }
+      const ok = enLinea || (r && r.ok);
+      cont.innerHTML = cerrar + '<div class="compra">' + pasosHTML(3) + '<div class="exito"><div class="circ' + (ok ? '' : ' ambar') + '">' + ico(ok ? 'check' : 'alerta') + '</div><h2 id="dlgPagoTit">' + (enLinea ? '¡Pago aprobado!' : ok ? '¡Pedido recibido!' : 'Pedido guardado') + '</h2>'
         + '<p>Tu código de pedido</p><div class="codigo"><span>' + esc(ped2.codigo) + '</span><button class="btn btn-sec btn-peq" type="button" data-accion="copiar" data-texto="' + esc(ped2.codigo) + '">' + ico('copy') + ' Copiar</button></div>'
+        + '<figure class="qr-pedido"><canvas id="qrPedido" role="img" aria-label="Código QR para recoger el pedido ' + esc(ped2.codigo) + '"></canvas><figcaption><b>QR de recojo.</b> Muéstralo en tienda: el vendedor lo escanea y encuentra tu pedido al instante. No lo compartas.</figcaption>'
+        + '<button class="btn btn-sec btn-peq" type="button" data-accion="guardar-qr-pedido">' + ico('descargar') + ' Guardar QR de recojo</button></figure>'
         + (ok ? '<div class="msj ok">La tienda ya recibió tu pedido. Te escribiremos al <b>' + esc(ped2.cliente.celular) + '</b> para confirmar disponibilidad y el horario de recojo.</div>'
           : '<div class="msj mal"><b>Tu pedido aún no llegó a la tienda.</b> No se perdió: está guardado en este equipo' + (r && r.motivo === 'red' ? ' y lo reenviaremos apenas haya conexión' : '') + '. Para que lo atiendan ahora, envíalo por WhatsApp con el botón de abajo.</div>')
         + '<div class="exito-grid"><div><div class="exito-acc"><a class="btn ' + (ok ? 'btn-sec' : 'btn-wa') + ' btn-block" href="' + API.waURL(mensajePedido(ped2)) + '" target="_blank" rel="noopener">' + ico('whatsapp') + ' ' + (ok ? 'Enviar copia por WhatsApp' : 'Enviar pedido por WhatsApp') + '</a>'
         + '<button class="btn btn-sec btn-block" type="button" data-accion="imprimir">' + ico('imprimir') + ' Descargar constancia (PDF)</button><button class="btn btn-osc btn-block" type="button" data-accion="cerrar-y-seguir">Seguir comprando</button></div>'
-        + '<div class="cuando"><b>Siguiente paso:</b> ' + (ped2.pago.metodo === 'tienda' ? 'paga en tienda al recoger tu pedido y presenta tu código.' : 'la tienda verificará tu pago con el N° de operación <b>' + esc(ped2.pago.operacion) + '</b> antes de entregarte los productos.') + '</div></div>' + resumenHTML(ped2) + '</div></div></div>';
+        + '<div class="cuando"><b>Siguiente paso:</b> ' + siguientePaso(ped2) + '</div></div>' + resumenHTML(ped2) + '</div></div></div>';
     }
     pintarIconos(cont);
+    if (c.paso === 2) montarQR();
+    if (c.paso === 3) qrDelPedido($('#qrPedido'), c.pedido.codigo);
+  }
+  // ---------- QR de recojo (independiente del QR de pago de Yape) ----------
+  // Contiene SOLO el código del pedido, p. ej. "MLM|261120-K7QX3PZD". La pistola lectora USB del mostrador
+  // lo "escribe" como texto + Enter en el programa C#, que busca el pedido por ese código.
+  const textoQRRecojo = (codigo) => String(codigo).replace(/^MLM-/, 'MLM|');
+  function qrDelPedido(canvas, codigo) {
+    const quitar = () => { const fig = canvas && canvas.closest('figure'); if (fig) fig.remove(); return null; };
+    if (!canvas || !window.qrcode) return quitar();
+    try {
+      const qr = window.qrcode(0, 'M'); // nivel M: suficiente para un texto corto y se lee rápido
+      qr.addData(textoQRRecojo(codigo)); qr.make();
+      const n = qr.getModuleCount(), margen = 4, celda = Math.max(4, Math.floor(320 / (n + margen * 2)));
+      const lado = celda * (n + margen * 2), pie = Math.round(celda * 7);
+      canvas.width = lado; canvas.height = lado + pie;
+      const g = canvas.getContext('2d');
+      g.fillStyle = '#fff'; g.fillRect(0, 0, canvas.width, canvas.height);
+      g.fillStyle = '#0c1a3d';
+      for (let f = 0; f < n; f++) for (let k = 0; k < n; k++) if (qr.isDark(f, k)) g.fillRect((k + margen) * celda, (f + margen) * celda, celda, celda);
+      // Texto debajo del QR: así la imagen guardada se entiende sola (y el vendedor puede teclearlo si falla el lector)
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = '700 ' + Math.round(celda * 2.6) + 'px ui-monospace, Consolas, monospace';
+      g.fillText(codigo, lado / 2, lado + pie * 0.3, lado - celda * 4);
+      g.font = '600 ' + Math.round(celda * 2) + 'px Barlow, system-ui, sans-serif'; g.fillStyle = '#5a6478';
+      g.fillText('Mega Las Malvinas · QR de recojo', lado / 2, lado + pie * 0.72, lado - celda * 4);
+      canvas.dataset.codigo = codigo;
+      return canvas.toDataURL('image/png');
+    } catch (e) { console.warn('[tienda] No se pudo generar el QR de recojo', e); return quitar(); }
+  }
+  function guardarQRPedido() {
+    const cv = $('#qrPedido'); if (!cv) return;
+    cv.toBlob((b) => {
+      if (!b) { aviso('No se pudo guardar el QR.'); return; }
+      const url = URL.createObjectURL(b), a = document.createElement('a');
+      a.href = url; a.download = 'Recojo-' + (cv.dataset.codigo || 'pedido') + '.png'; document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 8000); aviso('QR de recojo guardado en tus descargas.');
+    }, 'image/png');
+  }
+  const textoBoton = () => compra.metodo === 'yapeauto' ? 'Pagar ' + moneda(totalCent() / 100) + ' con Yape' : compra.metodo === 'pasarela' ? 'Ir a pagar' : 'Confirmar pedido';
+  function siguientePaso(p) {
+    if (p.pago.metodo === 'tienda') return 'paga en tienda al recoger tu pedido y presenta tu código.';
+    if (p.pago.metodo === 'yapeauto') return 'tu pago con Yape ya está confirmado (operación <b>' + esc(p.pago.operacion) + '</b>). Te avisaremos cuando tu pedido esté listo para recoger.';
+    if (p.pago.metodo === 'pasarela') return p.pago.estado === 'approved' ? 'tu pago ya está confirmado. Te avisaremos cuando tu pedido esté listo para recoger.' : 'cuando Mercado Pago confirme tu pago te avisaremos por WhatsApp.';
+    return 'la tienda verificará tu pago con el N° de operación <b>' + esc(p.pago.operacion) + '</b> antes de entregarte los productos.';
   }
   const metodoHTML = (id, icono, titulo, sub, extra) => '<label class="metodo"><input type="radio" name="metodo" value="' + id + '"' + (compra.metodo === id ? ' checked' : '') + '>' + icono + '<span><b>' + titulo + '</b><small>' + sub + '</small></span>' + extra + '</label>';
   function panelPagoHTML() {
     const m = compra.metodo, monto = moneda(totalCent() / 100);
     const campoOp = (txt) => '<div class="campo" style="margin:16px 0 0"><label for="fOp">N° de operación</label><input id="fOp" name="op" type="text" inputmode="numeric" maxlength="12" placeholder="' + txt + '" value="' + esc(compra.op) + '" required><span class="ayuda">Lo ves en la constancia de tu pago. Sirve para que la tienda confirme tu pedido.</span><span class="error" id="eOp"></span></div>';
     if (m === 'yape') {
-      return '<div class="panel-pago yape"><div class="pp-monto"><span>Monto a yapear</span><b>' + monto + '</b></div><div class="yape-cols"><div class="qr"><img src="' + esc(T.yape.qr) + '" alt="Código QR de Yape de ' + esc(T.yape.titular) + '" width="506" height="506"><a href="' + esc(T.yape.qr) + '" download="yape-mega-las-malvinas.png">Guardar QR</a></div>'
+      const dinamico = qrYapeDisponible();
+      const montoTxt = (totalCent() / 100).toFixed(2);
+      const qr = dinamico
+        ? '<div class="qr qr-dinamico"><canvas id="qrYape" role="img" aria-label="Código QR de Yape de ' + esc(T.yape.titular) + ', monto a pagar ' + esc(monto) + '"></canvas><button class="enlace-btn" type="button" data-accion="guardar-qr">' + ico('descargar') + ' Guardar QR</button></div>'
+        : '<div class="qr"><img src="' + esc(T.yape.qr) + '" alt="Código QR de Yape de ' + esc(T.yape.titular) + '" width="506" height="506"><a href="' + esc(T.yape.qr) + '" download="yape-mega-las-malvinas.png">Guardar QR</a></div>';
+      // Yape (cuentas personales) no completa el monto al escanear: el cliente lo escribe.
+      const pasos = '<li>Abre Yape, toca <b>Escanear</b> y apunta a este QR (o yapea al número).</li><li>Escribe el monto <b>' + monto + '</b>. Puedes copiarlo con el botón de arriba.</li><li>Confirma y pega abajo el N° de operación.</li>';
+      return '<div class="panel-pago yape"><div class="pp-monto"><span>Monto a yapear</span><b>' + monto + '</b><button class="btn btn-yape btn-peq" type="button" data-accion="copiar" data-texto="' + montoTxt + '">' + ico('copy') + ' Copiar monto</button></div><div class="yape-cols">' + qr
         + '<div><p class="titular"><small>Yapea a nombre de</small>' + esc(T.yape.titular) + '</p><div class="copiable"><div><small>Celular Yape</small><b>' + esc(T.yape.numeroVisible) + '</b></div><button class="btn btn-sec btn-peq" type="button" data-accion="copiar" data-texto="' + esc(T.yape.numero) + '">' + ico('copy') + ' Copiar</button></div>'
-        + '<ol class="instr"><li>Abre Yape y escanea el QR, o yapea al número.</li><li>Ingresa exactamente <b>' + monto + '</b>.</li><li>Copia el N° de operación y pégalo abajo.</li></ol></div></div>' + campoOp('Ej.: 12345678') + '</div>';
+        + '<ol class="instr">' + pasos + '</ol>'
+        + (dinamico ? '<p class="nota-movil">' + ico('info') + '<span>¿Compras desde tu celular? Toca <b>Guardar QR</b> y en Yape elige <b>Escanear → Galería</b> para leerlo desde tus fotos.</span></p>' : '')
+        + '</div></div>' + campoOp('Ej.: 12345678') + '</div>';
+    }
+    if (m === 'yapeauto') {
+      return '<div class="panel-pago yape"><div class="pp-monto"><span>Se cobrará exactamente</span><b>' + monto + '</b></div>'
+        + '<ol class="instr"><li>Abre tu app <b>Yape</b> y en el inicio toca <b>Código de aprobación</b> (6 dígitos, dura unos minutos).</li><li>Escribe abajo tu celular de Yape y ese código.</li><li>Pulsa <b>Pagar ' + monto + '</b>. No tienes que escribir el monto: se cobra solo.</li></ol>'
+        + '<div class="dos" style="margin-top:14px"><div class="campo"><label for="fYCel">Celular con Yape</label><input id="fYCel" name="ycel" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="12" placeholder="9XX XXX XXX" value="' + esc(compra.datos.celular || '') + '"><span class="error" id="eYCel"></span></div>'
+        + '<div class="campo"><label for="fYOtp">Código de aprobación</label><input id="fYOtp" name="yotp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 dígitos" class="otp"><span class="error" id="eYOtp"></span></div></div>'
+        + '<p class="aviso-pago">' + ico('shield') + '<span>Pago procesado por Mercado Pago. La tienda no ve ni guarda tu código. Tu límite diario de Yape aplica (hasta S/ 2,000).</span></p></div>';
+    }
+    if (m === 'pasarela') {
+      return '<div class="panel-pago"><div class="pp-monto"><span>Total a pagar</span><b>' + monto + '</b></div><p class="aviso-pago">' + ico('shield') + '<span>Te llevaremos a la página segura de <b>Mercado Pago</b> para pagar con tarjeta de crédito o débito u otros medios disponibles. La tienda no ve ni guarda los datos de tu tarjeta. Al terminar volverás aquí y verás la confirmación del pago.</span></p></div>';
     }
     if (m === 'transferencia') {
       return '<div class="panel-pago"><div class="pp-monto"><span>Monto a transferir</span><b>' + monto + '</b></div><div class="copiable"><div><small>N° de cuenta (soles)</small><b>' + esc(T.banco.cuenta) + '</b></div><button class="btn btn-sec btn-peq" type="button" data-accion="copiar" data-texto="' + esc(T.banco.cuenta) + '">' + ico('copy') + ' Copiar</button></div>'
@@ -543,28 +665,41 @@
   const limpiarCel = (v) => v.replace(/[\s\-+()]/g, '').replace(/^51(?=9\d{8}$)/, '');
   function error(id, msg, campo) { const e = $('#' + id); if (e) e.textContent = msg || ''; if (campo) { if (msg) campo.setAttribute('aria-invalid', 'true'); else campo.removeAttribute('aria-invalid'); } return !msg; }
   function validarDatos(f) {
-    const nombre = f.nombre.value.trim().replace(/\s+/g, ' '), cel = limpiarCel(f.celular.value.trim()), correo = f.correo.value.trim(), dni = f.dni.value.trim();
+    const nombre = f.nombre.value.trim().replace(/\s+/g, ' '), cel = limpiarCel(f.celular.value.trim()), correo = f.correo.value.trim().toLowerCase(), dni = f.dni.value.trim();
     const v = [
       error('eNombre', nombre.length < 3 || !/\p{L}/u.test(nombre) ? 'Escribe tu nombre y apellido.' : '', f.nombre),
       error('eCelular', !rxCel.test(cel) ? 'Ingresa un celular de 9 dígitos que empiece con 9.' : '', f.celular),
       error('eCorreo', !API.correoValido(correo) ? 'Ingresa un correo válido, por ejemplo nombre@correo.com.' : '', f.correo),
       error('eDni', dni && !/^\d{8}$/.test(dni) ? 'El DNI debe tener 8 dígitos.' : '', f.dni),
-      error('eAcepto', !f.ok.checked ? 'Marca esta casilla para continuar.' : '')
+      error('eAcepto', !f.ok.checked ? 'Para comprar en línea necesitamos tu autorización para usar tus datos. Marca la casilla.' : '', f.ok)
     ];
     if (v.every(Boolean)) return {nombre, celular: cel, correo, dni, recojo: f.recojo.value, notas: f.notas.value.trim(), ok: true};
     const primero = [f.nombre, f.celular, f.correo, f.dni, f.ok].find((x) => x.getAttribute('aria-invalid') === 'true' || (x === f.ok && !f.ok.checked)); if (primero) primero.focus();
     return null;
   }
+  // Código del pedido: MLM-AAMMDD-XXXXXXXX (fecha de Lima + 8 caracteres aleatorios).
+  // 31 letras/números sin los que se confunden (0/O, 1/I/L) → 31^8 ≈ 852 mil millones de combinaciones por día,
+  // así nadie puede adivinar el código de otro cliente para recoger su pedido.
+  const LARGO_CODIGO = 8;
   function codigoPedido() {
-    const l = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; const a = new Uint8Array(4); crypto.getRandomValues(a);
+    const l = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    const limite = 256 - (256 % l.length); // descarta bytes que harían más probables algunas letras
+    let azar = '';
+    while (azar.length < LARGO_CODIGO) {
+      const a = new Uint8Array(16); crypto.getRandomValues(a);
+      for (const x of a) if (x < limite && azar.length < LARGO_CODIGO) azar += l[x % l.length];
+    }
     const f = new Intl.DateTimeFormat('es-PE', {timeZone: 'America/Lima', year: '2-digit', month: '2-digit', day: '2-digit'}).formatToParts(new Date()).reduce((o, x) => { o[x.type] = x.value; return o; }, {});
-    return 'MLM-' + f.year + f.month + f.day + '-' + [...a].map((x) => l[x % l.length]).join('');
+    return 'MLM-' + f.year + f.month + f.day + '-' + azar;
   }
   function construirPedido() {
     const items = [...carrito].map(([id, n]) => { const p = porId.get(id); return {id, codigo: p.codigo, nombre: p.nombre, unidad: p.unidad, cant: n, precio: p.precio, importe: centimos(p, n) / 100}; });
     const total = totalCent() / 100, ahora = new Date();
     return {codigo: codigoPedido(), fecha: ahora.toISOString(), fechaTexto: new Intl.DateTimeFormat('es-PE', {timeZone: 'America/Lima', dateStyle: 'full', timeStyle: 'short'}).format(ahora),
-      cliente: {nombre: compra.datos.nombre, celular: compra.datos.celular, correo: compra.datos.correo, dni: compra.datos.dni}, recojo: compra.datos.recojo, notas: compra.datos.notas,
+      cliente: {nombre: compra.datos.nombre, celular: compra.datos.celular, correo: compra.datos.correo, dni: compra.datos.dni},
+      // Prueba del consentimiento: qué texto aceptó, qué versión y cuándo (se guarda en la hoja y luego en SQL)
+      consentimiento: {acepto: compra.datos.ok === true, version: VERSION_PRIVACIDAD, fecha: ahora.toISOString(), texto: TEXTO_CONSENTIMIENTO},
+      recojo: compra.datos.recojo, notas: compra.datos.notas,
       pago: {metodo: compra.metodo, etiqueta: METODOS[compra.metodo].nombre, operacion: METODOS[compra.metodo].req ? compra.op : ''}, items, total, base: baseCent(Math.round(total * 100)) / 100};
   }
   function mensajePedido(p) {
@@ -579,6 +714,8 @@
       error('eOp', ok ? '' : 'Ingresa el N° de operación (solo números, entre 6 y 12 dígitos).', form.op);
       if (!ok) { form.op.focus(); return; }
     }
+    if (m === 'pasarela') { pagarEnLinea(); return; }
+    if (m === 'yapeauto') { pagarYapeAuto(form); return; }
     compra.enviando = true;
     const btn = $('#btnConfirmar'); btn.disabled = true; btn.innerHTML = '<span class="girar" aria-hidden="true"></span> Enviando pedido…';
     const pedido = construirPedido();
@@ -589,10 +726,73 @@
     carrito.clear(); guardar(); $$('[data-ctl]').forEach((el) => { const p = porId.get(+el.dataset.ctl); if (p) el.innerHTML = el.dataset.grande ? ctlGrande(p) : ctl(p); }); actualizarContadores();
     renderCompra(); $('#dlgPagoCont').scrollTop = 0;
   }
+  // Pago en línea: el servidor (carpeta servidor/) crea el cobro en Mercado Pago con los precios del catálogo
+  // y devuelve la dirección de pago. Al terminar, Mercado Pago regresa a #pago/CODIGO.
+  async function pagarEnLinea() {
+    compra.enviando = true;
+    const btn = $('#btnConfirmar'); btn.disabled = true; btn.innerHTML = '<span class="girar" aria-hidden="true"></span> Conectando con Mercado Pago…';
+    const pedido = construirPedido(); pedido.pago.estado = 'pendiente';
+    guardarCliente({nombre: pedido.cliente.nombre, celular: pedido.cliente.celular, correo: pedido.cliente.correo, dni: pedido.cliente.dni});
+    const r = await API.crearPago(pedido, location.href.split('#')[0]);
+    if (!r.ok) {
+      compra.enviando = false; btn.disabled = false; btn.textContent = 'Ir a pagar';
+      $('#errPago').innerHTML = '<div class="msj mal">No pudimos conectar con la pasarela de pago. Intenta otra vez en un momento o elige Yape.</div>';
+      return;
+    }
+    API.guardarEnCurso(pedido);
+    location.href = r.url;
+  }
+  // Yape automático: celular + código de aprobación → token (MercadoPago.js) → el servidor cobra el total exacto
+  async function pagarYapeAuto(form) {
+    const cel = limpiarCel(form.ycel.value.trim()), otp = form.yotp.value.replace(/\D/g, '');
+    const v = [
+      error('eYCel', rxCel.test(cel) ? '' : 'Ingresa el celular de 9 dígitos con el que usas Yape.', form.ycel),
+      error('eYOtp', /^\d{6}$/.test(otp) ? '' : 'El código de aprobación tiene 6 dígitos. Lo ves en el inicio de tu app Yape.', form.yotp)
+    ];
+    if (!v.every(Boolean)) { (v[0] ? form.yotp : form.ycel).focus(); return; }
+    compra.enviando = true;
+    const btn = $('#btnConfirmar'), txt = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="girar" aria-hidden="true"></span> Cobrando con Yape…';
+    const fallo = (msg) => {
+      compra.enviando = false; btn.disabled = false; btn.innerHTML = txt;
+      form.yotp.value = ''; $('#errPago').innerHTML = '<div class="msj mal">' + esc(msg) + '</div>'; form.yotp.focus();
+    };
+    const t = await API.tokenYape(cel, otp);
+    if (!t.ok) { fallo('No pudimos validar tu código de Yape. Genera uno nuevo en la app e inténtalo otra vez.'); return; }
+    const pedido = construirPedido();
+    const r = await API.pagarYape(pedido, t.token);
+    if (!r.ok) { fallo(r.detalle && !/^HTTP|Error|Abort/.test(r.detalle) ? r.detalle : 'No pudimos conectar con el servicio de pago. Intenta de nuevo o paga con Yape QR.'); return; }
+    if (r.estado !== 'approved') { fallo(r.mensaje || 'Yape rechazó el pago. Genera un código nuevo e inténtalo otra vez.'); return; }
+    pedido.pago.operacion = String(r.id || ''); pedido.pago.estado = 'approved';
+    guardarCliente({nombre: pedido.cliente.nombre, celular: pedido.cliente.celular, correo: pedido.cliente.correo, dni: pedido.cliente.dni});
+    let envio; try { envio = await API.enviarPedido(pedido); } catch { envio = {ok: false, motivo: 'red'}; }
+    compra.pedido = pedido; compra.resultado = {ok: true, correo: envio.ok}; compra.paso = 3; compra.enviando = false;
+    carrito.clear(); guardar(); $$('[data-ctl]').forEach((el) => { const p = porId.get(+el.dataset.ctl); if (p) el.innerHTML = el.dataset.grande ? ctlGrande(p) : ctl(p); }); actualizarContadores();
+    renderCompra(); $('#dlgPagoCont').scrollTop = 0;
+  }
+  async function volverDePago(codigo) {
+    const pedido = API.leerEnCurso(codigo);
+    if (!pedido) { aviso('No encontramos ese pedido en este equipo.'); return; }
+    compra = {paso: 3, enviando: false, datos: {}, metodo: 'pasarela', op: '', pedido, resultado: {ok: true}};
+    $('#dlgPagoCont').innerHTML = '<div class="compra"><div class="exito"><span class="girar grande" aria-hidden="true"></span><h2 id="dlgPagoTit">Confirmando tu pago…</h2><p>Consultando a Mercado Pago.</p></div></div>';
+    abrir($('#dlgPago'));
+    const e = await API.estadoPago(codigo);
+    pedido.pago.estado = e.ok ? e.estado : 'desconocido';
+    pedido.pago.operacion = e.id ? String(e.id) : '';
+    if (pedido.pago.estado === 'approved') {
+      if (!pedido.avisado) { pedido.avisado = true; await API.enviarPedido(pedido); }
+      carrito.clear(); guardar(); actualizarContadores();
+      $$('[data-ctl]').forEach((el) => { const p = porId.get(+el.dataset.ctl); if (p) el.innerHTML = el.dataset.grande ? ctlGrande(p) : ctl(p); });
+    }
+    API.guardarEnCurso(pedido);
+    renderCompra();
+    history.replaceState(null, '', location.pathname + location.search + '#inicio');
+  }
   function imprimirConstancia() {
     const p = compra && compra.pedido; if (!p) return;
     const z = $('#zonaImpresion');
-    z.innerHTML = '<div class="imp-cab"><div><h1>MEGA LAS MALVINAS</h1><div>Ferretería eléctrica · ' + esc(T.lugar) + '</div><div>WhatsApp ' + esc(T.telefonoVisible) + '</div></div><div style="text-align:right"><div>Constancia de pedido</div><div class="imp-cod">' + esc(p.codigo) + '</div><div>' + esc(p.fechaTexto) + '</div></div></div>'
+    const fig = document.createElement('figure'), lienzo = document.createElement('canvas'); fig.append(lienzo);
+    const qr = qrDelPedido(lienzo, p.codigo);
+    z.innerHTML = '<div class="imp-cab"><div><h1>MEGA LAS MALVINAS</h1><div>Ferretería eléctrica · ' + esc(T.lugar) + '</div><div>WhatsApp ' + esc(T.telefonoVisible) + '</div></div><div style="text-align:right;display:flex;gap:12px;align-items:center"><div><div>Constancia de pedido</div><div class="imp-cod">' + esc(p.codigo) + '</div><div>' + esc(p.fechaTexto) + '</div></div>' + (qr ? '<img src="' + qr + '" alt="QR de recojo" width="110" style="height:auto">' : '') + '</div></div>'
       + '<p><b>Cliente:</b> ' + esc(p.cliente.nombre) + ' · <b>Celular:</b> ' + esc(p.cliente.celular) + ' · <b>Correo:</b> ' + esc(p.cliente.correo) + (p.cliente.dni ? ' · <b>DNI:</b> ' + esc(p.cliente.dni) : '') + '</p>'
       + '<p><b>Recojo:</b> ' + esc(p.recojo) + ' · <b>Pago:</b> ' + esc(p.pago.etiqueta) + (p.pago.operacion ? ' · <b>N° de operación:</b> ' + esc(p.pago.operacion) : '') + '</p>'
       + '<table><thead><tr><th>Código</th><th>Producto</th><th class="d">Cant.</th><th class="d">P. unit.</th><th class="d">Importe</th></tr></thead><tbody>' + p.items.map((i) => '<tr><td>' + esc(i.codigo) + '</td><td>' + esc(i.nombre) + '</td><td class="d">' + fmtCant(i.cant) + ' ' + esc(i.unidad) + '</td><td class="d">' + moneda(i.precio) + '</td><td class="d">' + moneda(i.importe) + '</td></tr>').join('') + '</tbody></table>'
@@ -638,6 +838,8 @@
       }
       case 'copiar': { const ok = await API.copiar(b.dataset.texto); const t = b.innerHTML; b.innerHTML = ico(ok ? 'check' : 'alerta') + (ok ? ' Copiado' : ' Copia manual'); setTimeout(() => { b.innerHTML = t; }, 1600); break; }
       case 'imprimir': imprimirConstancia(); break;
+      case 'guardar-qr': guardarQR(); break;
+      case 'guardar-qr-pedido': guardarQRPedido(); break;
       case 'slide-prev': irSlide(slideActual - 1); break;
       case 'slide-next': irSlide(slideActual + 1); break;
       case 'slide-ir': irSlide(+b.dataset.i); break;
@@ -671,7 +873,11 @@
     }
   });
   document.addEventListener('change', (e) => {
-    if (e.target.name === 'metodo' && compra) { const f = e.target.form; compra.op = f.op ? f.op.value : compra.op; compra.metodo = e.target.value; $('#panelPago').innerHTML = panelPagoHTML(); pintarIconos($('#panelPago')); }
+    if (e.target.name === 'metodo' && compra) {
+      const f = e.target.form; compra.op = f.op ? f.op.value : compra.op; compra.metodo = e.target.value;
+      $('#panelPago').innerHTML = panelPagoHTML(); pintarIconos($('#panelPago')); montarQR();
+      $('#btnConfirmar').textContent = textoBoton();
+    }
   });
   async function enviarContacto(f) {
     const el = f.elements, res = $('#resContacto'), btn = $('#btnContacto');

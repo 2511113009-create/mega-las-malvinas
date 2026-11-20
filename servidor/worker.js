@@ -13,6 +13,8 @@
 //   ORIGENES         (opcional) orígenes permitidos separados por coma; por defecto el de SITIO
 
 const MP = 'https://api.mercadopago.com';
+// Código de pedido: MLM-AAMMDD-XXXXXXXX (8 caracteres). Se aceptan también los antiguos de 4.
+const RX_CODIGO = /^MLM-\d{6}-(?:[A-Z0-9]{8}|[A-Z0-9]{4})$/;
 
 export default {
   async fetch(req, env) {
@@ -58,7 +60,7 @@ async function catalogo(env) {
 
 async function crearPago(body, env) {
   const codigo = String(body.codigo || '');
-  if (!/^MLM-\d{6}-[A-Z0-9]{4}$/.test(codigo)) throw falla('Código de pedido inválido');
+  if (!RX_CODIGO.test(codigo)) throw falla('Código de pedido inválido');
   if (!Array.isArray(body.items) || !body.items.length || body.items.length > 80) throw falla('Carrito inválido');
   const precios = await catalogo(env);
   const items = body.items.map((i) => {
@@ -110,7 +112,7 @@ const MOTIVOS = {
 };
 async function pagarYape(body, env) {
   const codigo = String(body.codigo || '');
-  if (!/^MLM-\d{6}-[A-Z0-9]{4}$/.test(codigo)) throw falla('Código de pedido inválido');
+  if (!RX_CODIGO.test(codigo)) throw falla('Código de pedido inválido');
   if (!body.token || typeof body.token !== 'string' || body.token.length > 200) throw falla('Token de Yape inválido');
   const precios = await catalogo(env);
   if (!Array.isArray(body.items) || !body.items.length || body.items.length > 80) throw falla('Carrito inválido');
@@ -150,7 +152,7 @@ async function pagarYape(body, env) {
 }
 
 async function estado(ref, env) {
-  if (!/^MLM-\d{6}-[A-Z0-9]{4}$/.test(ref || '')) throw falla('Referencia inválida');
+  if (!RX_CODIGO.test(ref || '')) throw falla('Referencia inválida');
   const r = await fetch(MP + '/v1/payments/search?sort=date_created&criteria=desc&external_reference=' + encodeURIComponent(ref), {
     headers: {Authorization: 'Bearer ' + env.MP_ACCESS_TOKEN}
   });
