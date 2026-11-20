@@ -12,7 +12,10 @@
   const guardarCola = (l) => { try { localStorage.setItem(COLA, JSON.stringify(l.slice(-20))); } catch { /* sin almacenamiento */ } };
 
   // Envía un correo a T.correoPedidos mediante la API AJAX de FormSubmit.
+  const enLocal = () => /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
   async function enviarCorreo(asunto, campos, replyTo) {
+    // Pruebas en tu PC: no se envían correos reales (evita pedidos falsos en tu bandeja)
+    if (enLocal() && !T.correoEnLocal) { console.info('[tienda] Correo simulado (localhost):', asunto, campos); return {ok: true, simulado: true}; }
     if (!correoValido(T.correoPedidos)) {
       console.warn('[tienda] Falta configurar "correoPedidos" en js/config.js');
       return {ok: false, motivo: 'sin-correo'};
@@ -38,23 +41,56 @@
     }
   }
 
-  const lineaItem = (i) => i.cant + ' ' + i.unidad + ' × ' + i.nombre + ' (' + i.codigo + ') = S/ ' + i.importe.toFixed(2);
+  // ---------- Correo del pedido ----------
+  const soles = (n) => 'S/ ' + Number(n).toFixed(2);
+  const cantTxt = (i) => (Number.isInteger(i.cant) ? i.cant : i.cant.toFixed(2).replace(/0$/, '')) + ' ' + ({unidad: 'unid.', metro: 'm', kg: 'kg', rollo: 'rollo(s)'}[i.unidad] || i.unidad);
+  const lineaItem = (i, n) => (n + 1) + '. ' + cantTxt(i) + ' × ' + i.nombre + ' [' + i.codigo + ']  →  ' + soles(i.precio) + ' c/u = ' + soles(i.importe);
+  const pagado = (p) => p.pago.estado === 'approved' && (p.pago.metodo === 'yapeauto' || p.pago.metodo === 'pasarela');
+
+  // Qué tiene que hacer la tienda con este pedido, en una línea
+  function textoEstadoPago(p) {
+    const op = p.pago.operacion, t = soles(p.total);
+    if (pagado(p)) return 'PAGADO ✔ ' + p.pago.etiqueta + ' · operación N° ' + op + ' · confirmado por Mercado Pago';
+    if (p.pago.metodo === 'yape') return 'POR VERIFICAR: abre tu app Yape y confirma que llegó la operación N° ' + op + ' por ' + t;
+    if (p.pago.metodo === 'transferencia') return 'POR VERIFICAR: revisa en tu banco la transferencia N° ' + op + ' por ' + t;
+    if (p.pago.metodo === 'tienda') return 'PAGA AL RECOGER: cobrar ' + t + ' (efectivo, Plin o tarjeta)';
+    return p.pago.etiqueta + ' · pendiente';
+  }
+  function asuntoPedido(p) {
+    return (pagado(p) ? '✅ PAGADO · ' : '🛒 Nuevo pedido · ') + p.codigo + ' · ' + soles(p.total) + ' · ' + p.cliente.nombre.split(' ')[0] + ' · ' + p.pago.etiqueta;
+  }
 
   function camposPedido(p) {
+    const base = p.base != null ? p.base : Math.round(p.total / (1 + T.igv) * 100) / 100;
+    const msjCliente = 'Hola ' + p.cliente.nombre.split(' ')[0] + ', te escribimos de Mega Las Malvinas por tu pedido ' + p.codigo + ' (' + soles(p.total) + ').';
+    const unidades = p.items.length + (p.items.length === 1 ? ' producto' : ' productos');
     return {
       'Pedido': p.codigo,
-      'Fecha': p.fechaTexto,
+      'Fecha y hora': p.fechaTexto,
+      'TOTAL A COBRAR': soles(p.total) + '  (IGV incluido)',
+      'Estado del pago': textoEstadoPago(p),
+      ['Productos (' + unidades + ')']: p.items.map(lineaItem).join('\n'),
+      'Subtotal sin IGV': soles(base),
+      'IGV (18 %)': soles(p.total - base),
       'Cliente': p.cliente.nombre,
       'Celular': p.cliente.celular,
-      'Correo del cliente': p.cliente.correo,
-      'DNI': p.cliente.dni || '—',
-      'Recojo': p.recojo,
-      'Notas': p.notas || '—',
-      'Método de pago': p.pago.etiqueta + (p.pago.metodo === 'pasarela' ? (p.pago.estado === 'approved' ? ' · APROBADO por Mercado Pago (verifica en tu panel)' : ' · pendiente') : ''),
-      'N° de operación': p.pago.operacion || '—',
-      'Productos': p.items.map(lineaItem).join('\n'),
-      'Total (IGV incluido)': 'S/ ' + p.total.toFixed(2)
+      'WhatsApp del cliente': 'https://wa.me/51' + p.cliente.celular + '?text=' + encodeURIComponent(msjCliente),
+      'email': p.cliente.correo,
+      'DNI': p.cliente.dni || 'No indicó',
+      'Recoge': p.recojo,
+      'Notas del cliente': p.notas || 'Sin notas',
+      'Siguiente paso': pagado(p) ? 'Preparar el pedido y avisar al cliente que puede recogerlo.' : 'Verificar el pago, confirmar stock y escribir al cliente por WhatsApp.'
     };
+  }
+
+  // Confirmación automática al cliente (FormSubmit la envía al campo "email")
+  function respuestaCliente(p) {
+    return 'Hola ' + p.cliente.nombre.split(' ')[0] + ', ¡gracias por tu compra en Mega Las Malvinas!\n\n'
+      + 'Tu pedido: ' + p.codigo + '\nTotal: ' + soles(p.total) + ' (IGV incluido)\nPago: ' + p.pago.etiqueta + (p.pago.operacion ? ' · operación N° ' + p.pago.operacion : '') + '\n\n'
+      + p.items.map(lineaItem).join('\n') + '\n\n'
+      + (pagado(p) ? 'Tu pago ya está confirmado. ' : (p.pago.metodo === 'tienda' ? 'Pagarás al recoger. ' : 'Verificaremos tu pago en breve. '))
+      + 'Te escribiremos por WhatsApp al ' + p.cliente.celular + ' para confirmar cuándo recoger (' + p.recojo + ').\n'
+      + 'Presenta tu código ' + p.codigo + ' en tienda.\n\nMega Las Malvinas · ' + T.lugar + ' · WhatsApp ' + T.telefonoVisible;
   }
 
   // Registro en Google Sheets (Apps Script). text/plain evita la verificación CORS previa.
@@ -69,10 +105,11 @@
 
   async function enviarPedido(p) {
     registrarEnHoja(p); // en paralelo; el correo sigue siendo el aviso principal
-    const r = await enviarCorreo('Nuevo pedido ' + p.codigo + ' · S/ ' + p.total.toFixed(2), camposPedido(p), p.cliente.correo);
+    const campos = Object.assign(camposPedido(p), correoValido(p.cliente.correo) ? {_autoresponse: respuestaCliente(p)} : {});
+    const r = await enviarCorreo(asuntoPedido(p), campos, p.cliente.correo);
     if (!r.ok) {
       const cola = leerCola().filter((x) => x.codigo !== p.codigo);
-      cola.push({tipo: 'pedido', codigo: p.codigo, asunto: 'Nuevo pedido ' + p.codigo + ' · S/ ' + p.total.toFixed(2), campos: camposPedido(p), replyTo: p.cliente.correo});
+      cola.push({tipo: 'pedido', codigo: p.codigo, asunto: asuntoPedido(p), campos, replyTo: p.cliente.correo});
       guardarCola(cola);
     }
     return r;
