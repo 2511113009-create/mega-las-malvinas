@@ -1,0 +1,56 @@
+// Configuración de la tienda. Aquí se cambian los datos de contacto y de pago.
+// No hace falta tocar nada más para actualizar teléfonos, cuentas o el correo de pedidos.
+window.TIENDA = {
+  nombre: 'Mega Las Malvinas',
+  lugar: 'Barranca, Lima, Perú',
+
+  // Correo que RECIBE los pedidos y los mensajes del formulario de contacto.
+  // Se envía mediante la API de FormSubmit (https://formsubmit.co).
+  // La primera vez, FormSubmit manda un correo de confirmación a esta dirección:
+  // hay que abrirlo y pulsar "Activate Form". Desde ahí cada pedido llega a la bandeja.
+  correoPedidos: '',
+
+  // WhatsApp de atención (código de país + número, sin + ni espacios)
+  whatsapp: '51992081815',
+  telefonoVisible: '992 081 815',
+
+  // Pago con Yape
+  yape: {
+    numero: '992081815',
+    numeroVisible: '992 081 815',
+    titular: 'Bill Johan Robles Alejo',
+    qr: 'img/yape-qr.png',
+    // Contenido del QR de Yape del dueño (leído de img/yape-qr.png). Con él la web genera,
+    // en cada compra, un QR con el monto exacto incluido. Si cambias de QR, reemplaza este texto.
+    emv: '000201010211393246721bdfa1785685a58210398e4ed7f55204561153036045802PE5906YAPERO6004Lima630417DD',
+    // '12' = QR dinámico con monto (recomendado). Si al escanear Yape no muestra el monto, prueba '11'.
+    qrModo: '12'
+  },
+
+  // Cobro automático con pasarela (opcional). Ver README → "Pagos con tarjeta".
+  // Cuando publiques el servidor de pagos (carpeta servidor/), pega aquí su dirección,
+  // por ejemplo 'https://pagos-malvinas.tu-usuario.workers.dev'. Vacío = opción oculta.
+  pasarela: {
+    url: '',
+    nombre: 'Tarjeta, Yape u otros (Mercado Pago)'
+  },
+
+  // Pago por transferencia en soles
+  banco: {
+    cuenta: '23514728321007',
+    cci: '00223511472832100706'
+  },
+
+  // Los precios del catálogo ya incluyen IGV
+  igv: 0.18,
+
+  // Códigos de producto que ya tienen foto real guardada en img/productos/CODIGO.webp
+  // (por ejemplo: ['LED-001', 'HER-011']). El resto usa su ilustración.
+  // Las fotos de cada producto están en js/fotos.js. Estas dos opciones tienen prioridad sobre ellas:
+  fotosReales: [],   // códigos con foto propia: img/productos/CODIGO.webp
+  fotosGrupo: {},    // foto compartida por tipo, ej.: {'Focos LED': 'img/productos/focos-led.webp'}
+
+  // Búsqueda en Google Maps (se abre en otra pestaña)
+  // Ubicación exacta de la tienda (enlace compartido por el dueño)
+  ubicacion: {lat: -10.7526369, lng: -77.7615328, enlace: 'https://maps.app.goo.gl/6qLEPKYVNLY3N7ny9'}
+};

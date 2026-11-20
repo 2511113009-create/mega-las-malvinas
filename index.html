@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es-PE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mega Las Malvinas | Ferretería eléctrica en Barranca</title>
+<meta name="description" content="Ferretería eléctrica en Barranca: focos y reflectores LED, cables, llaves térmicas, interruptores y herramientas. Compra en línea, paga con Yape y recoge en tienda.">
+<meta name="theme-color" content="#d02020">
+<link rel="canonical" href="https://2511113009-create.github.io/mega-las-malvinas/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_PE">
+<meta property="og:site_name" content="Mega Las Malvinas">
+<meta property="og:title" content="Mega Las Malvinas | Ferretería eléctrica en Barranca">
+<meta property="og:description" content="Iluminación, cables, interruptores y herramientas. Compra en línea y recoge en tienda.">
+<meta property="og:url" content="https://2511113009-create.github.io/mega-las-malvinas/">
+<meta property="og:image" content="https://2511113009-create.github.io/mega-las-malvinas/img/portada-1.webp">
+<link rel="icon" href="img/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="img/icono-256.png" sizes="256x256" type="image/png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/estilos.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"HardwareStore","name":"Mega Las Malvinas","description":"Ferretería eléctrica en Barranca.","telephone":"+51992081815","priceRange":"S/","paymentAccepted":"Yape, transferencia bancaria, efectivo","currenciesAccepted":"PEN","geo":{"@type":"GeoCoordinates","latitude":-10.7526369,"longitude":-77.7615328},"hasMap":"https://maps.app.goo.gl/6qLEPKYVNLY3N7ny9","logo":"https://2511113009-create.github.io/mega-las-malvinas/img/logo.png","address":{"@type":"PostalAddress","addressLocality":"Barranca","addressRegion":"Lima","addressCountry":"PE"}}
+</script>
+<script defer src="js/config.js"></script>
+<script defer src="js/datos.js"></script>
+<script defer src="js/fotos.js"></script>
+<script defer src="js/ilustraciones.js"></script>
+<script defer src="js/vendor/qrcode.min.js"></script>
+<script defer src="js/yape.js"></script>
+<script defer src="js/api.js"></script>
+<script defer src="js/app.js"></script>
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<div class="franja">
+  <div class="caja franja-in">
+    <span><i data-ico="pin"></i> Barranca, Lima</span>
+    <span class="solo-pc"><i data-ico="bolt"></i> Especialistas en ferretería eléctrica</span>
+    <a href="#contacto" data-wa><i data-ico="whatsapp"></i> WhatsApp <b data-tel></b></a>
+  </div>
+</div>
+
+<header class="cabecera" id="cabecera">
+  <div class="caja cab-in">
+    <a class="marca" href="#inicio" aria-label="Mega Las Malvinas, ir al inicio">
+      <img class="logo" src="img/logo.png" width="154" height="52" alt="Mega Las Malvinas, en Barranca">
+    </a>
+
+    <form class="buscador" id="buscador" role="search" autocomplete="off">
+      <label class="sr" for="q">Buscar productos</label>
+      <i data-ico="search"></i>
+      <input id="q" type="search" placeholder="Busca por nombre o código: foco, cable, taladro…" maxlength="80" role="combobox" aria-expanded="false" aria-controls="sugerencias" aria-autocomplete="list">
+      <kbd aria-hidden="true">/</kbd>
+      <button class="btn-buscar" type="submit">Buscar</button>
+      <ul id="sugerencias" role="listbox" aria-label="Sugerencias" hidden></ul>
+    </form>
+
+    <div class="acciones">
+      <a class="acc" href="#favoritos" id="accFav" aria-label="Favoritos"><i data-ico="heart"></i><span class="acc-txt">Favoritos</span><b class="burbuja" id="cntFav" hidden>0</b></a>
+      <button class="acc acc-carrito" type="button" id="accCarrito" data-accion="carrito" aria-label="Abrir carrito"><i data-ico="cart"></i><span class="acc-txt">Carrito</span><b class="burbuja" id="cntCarrito">0</b></button>
+    </div>
+  </div>
+  <nav class="nav" aria-label="Principal"><div class="caja nav-in" id="nav"></div></nav>
+</header>
+
+<main id="contenido" tabindex="-1">
+  <noscript><div class="caja aviso-js"><p>Para ver el catálogo y comprar necesitas activar JavaScript. También puedes escribirnos por <a href="https://wa.me/51992081815">WhatsApp</a>.</p></div></noscript>
+  <div id="vista"></div>
+</main>
+
+<footer class="pie">
+  <div class="caja pie-in">
+    <div class="pie-marca">
+      <a class="marca marca-clara" href="#inicio" aria-label="Mega Las Malvinas"><img class="logo" src="img/logo.png" width="167" height="56" alt=""></a>
+      <p>Ferretería eléctrica en Barranca. Iluminación, cables, interruptores y herramientas.</p>
+    </div>
+    <div>
+      <h2>Catálogo</h2>
+      <ul id="pieCats"></ul>
+    </div>
+    <div>
+      <h2>Ayuda</h2>
+      <ul>
+        <li><a href="#como-comprar">Cómo comprar</a></li>
+        <li><a href="#metodos-pago">Métodos de pago</a></li>
+        <li><a href="#contacto">Contacto</a></li>
+        <li><a href="#favoritos">Mis favoritos</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2>Contacto</h2>
+      <ul class="pie-contacto">
+        <li><i data-ico="pin"></i> Barranca, Lima, Perú</li>
+        <li><i data-ico="whatsapp"></i> <a href="#" data-wa><span data-tel></span></a></li>
+        <li><a href="#" data-mapa><i data-ico="route"></i> Cómo llegar</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="caja pie-base">
+    <span>© <span id="anio"></span> Mega Las Malvinas. Precios en soles (PEN) con IGV incluido; confirmamos disponibilidad al recibir tu pedido. <span class="creditos-fotos">Fotos referenciales: el producto puede variar en marca o color · <a href="creditos.html">Créditos de fotos</a></span></span>
+    <span class="pie-pagos"><b>Yape</b><b>Transferencia</b><b>Efectivo en tienda</b></span>
+  </div>
+</footer>
+
+<button class="fab" id="fab" type="button" data-accion="carrito" hidden><i data-ico="cart"></i><span id="fabTxt"></span></button>
+
+<dialog id="dlgProducto" class="modal" aria-labelledby="dlgProductoTit"><div class="modal-in" id="dlgProductoCont"></div></dialog>
+<dialog id="dlgCarrito" class="cajon" aria-labelledby="dlgCarritoTit"><div class="cajon-in" id="dlgCarritoCont"></div></dialog>
+<dialog id="dlgPago" class="modal modal-ancho" aria-labelledby="dlgPagoTit"><div class="modal-in" id="dlgPagoCont"></div></dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<section id="zonaImpresion" aria-hidden="true"></section>
+</body>
+</html>

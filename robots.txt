@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /servidor/
+Sitemap: https://2511113009-create.github.io/mega-las-malvinas/sitemap.xml
