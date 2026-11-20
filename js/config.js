@@ -8,11 +8,7 @@ window.TIENDA = {
   // Se envía mediante la API de FormSubmit (https://formsubmit.co).
   // La primera vez, FormSubmit manda un correo de confirmación a esta dirección:
   // hay que abrirlo y pulsar "Activate Form". Desde ahí cada pedido llega a la bandeja.
-  correoPedidos: '251.1113.009@unab.edu.pe',
-
-  // Registro de pedidos en Google Sheets (lo lee tu programa C#). URL de la Aplicación web de
-  // Apps Script que termina en /exec. Ver integraciones/google-apps-script/Codigo.gs. Vacío = desactivado.
-  hojaPedidos: '',
+  correoPedidos: '',
 
   // WhatsApp de atención (código de país + número, sin + ni espacios)
   whatsapp: '51992081815',
@@ -23,24 +19,7 @@ window.TIENDA = {
     numero: '992081815',
     numeroVisible: '992 081 815',
     titular: 'Bill Johan Robles Alejo',
-    qr: 'img/yape-qr.png',
-    // Contenido del QR de Yape del dueño (leído de img/yape-qr.png). Con él la web genera,
-    // en cada compra, un QR con el monto exacto incluido. Si cambias de QR, reemplaza este texto.
-    emv: '000201010211393246721bdfa1785685a58210398e4ed7f55204561153036045802PE5906YAPERO6004Lima630417DD',
-    // Probado: Yape (cuenta personal) lee el QR pero NO completa el monto con '12'.
-    // '11' = QR estático igual al original, con el monto como dato extra (la web pide escribirlo igual).
-    qrModo: '11'
-  },
-
-  // Cobro automático con pasarela (opcional). Ver README → "Pagos con tarjeta".
-  // Cuando publiques el servidor de pagos (carpeta servidor/), pega aquí su dirección,
-  // por ejemplo 'https://pagos-malvinas.tu-usuario.workers.dev'. Vacío = opción oculta.
-  pasarela: {
-    url: '',
-    // Public Key de PRODUCCIÓN de Mercado Pago (empieza con APP_USR-). Es pública, puede ir aquí.
-    // Con url + publicKey aparece "Yape automático": el monto se cobra solo, el cliente no lo escribe.
-    publicKey: '',
-    nombre: 'Tarjeta, Yape u otros (Mercado Pago)'
+    qr: 'img/yape-qr.png'
   },
 
   // Pago por transferencia en soles
@@ -54,7 +33,6 @@ window.TIENDA = {
 
   // Códigos de producto que ya tienen foto real guardada en img/productos/CODIGO.webp
   // (por ejemplo: ['LED-001', 'HER-011']). El resto usa su ilustración.
-  // Las fotos de cada producto están en js/fotos.js. Estas dos opciones tienen prioridad sobre ellas:
   fotosReales: [],   // códigos con foto propia: img/productos/CODIGO.webp
   fotosGrupo: {},    // foto compartida por tipo, ej.: {'Focos LED': 'img/productos/focos-led.webp'}
 
