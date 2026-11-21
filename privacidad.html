@@ -7,18 +7,41 @@
 <meta name="description" content="Cómo Mega Las Malvinas usa y protege tus datos personales (Ley N.° 29733).">
 <link rel="icon" href="img/favicon-32.png" sizes="32x32" type="image/png">
 <style>
-body{font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;color:#1d2433;background:#f5f7fb}
-main{max-width:760px;margin:0 auto;padding:24px 16px 48px}
-h1{font-size:1.7rem;margin:0 0 4px;line-height:1.2}h2{font-size:1.1rem;margin:28px 0 6px}
-p,li{color:#3d4658}ul{padding-left:20px}a{color:#c01818;font-weight:600}
-.fecha{color:#6b7488;font-size:.9rem;margin-bottom:20px}
-.caja{background:#fff;border:1px solid #e3e8f2;border-radius:12px;padding:16px 18px}
+:root{--azul:#103080;--azul-2:#0b2260;--rojo:#d02020;--tinta:#0c1a3d;--tinta-2:#3a4768;--tenue:#5b6785;--linea:#dce2f0;--fondo:#f3f6fc}
+*{box-sizing:border-box}
+body{font:16px/1.65 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;margin:0;color:var(--tinta);background:var(--fondo)}
+.cab{background:var(--azul-2);color:#fff}
+.cab-in{max-width:820px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.cab img{height:46px;width:auto;display:block}
+.cab a{color:#fff;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 14px;font-size:.9rem;white-space:nowrap}
+.cab a:hover{background:rgba(255,255,255,.12)}
+.banda{background:var(--azul);color:#fff;padding:28px 16px 64px}
+.banda-in{max-width:820px;margin:0 auto}
+.banda small{display:inline-block;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.78rem;color:#ffd75e;margin-bottom:6px}
+h1{font-size:clamp(1.7rem,4vw,2.3rem);margin:0 0 6px;line-height:1.15}
+.fecha{color:#c9d4f2;font-size:.9rem;margin:0}
+main{max-width:820px;margin:-44px auto 0;padding:0 16px 48px}
+.hoja{background:#fff;border:1px solid var(--linea);border-radius:16px;padding:clamp(18px,4vw,34px);box-shadow:0 1px 2px rgba(10,22,58,.06),0 10px 28px -14px rgba(10,22,58,.28)}
+h2{font-size:1.08rem;margin:28px 0 8px;padding-left:12px;border-left:4px solid var(--rojo);line-height:1.3}
+p,li{color:var(--tinta-2)}ul{padding-left:20px}li{margin:4px 0}
+a{color:var(--azul);font-weight:600}
+.caja{background:#eef7f1;border:1px solid #bfe3cb;border-radius:12px;padding:14px 16px}
+.caja p{margin:0;color:#0d4a25}
+.pie{text-align:center;color:var(--tenue);font-size:.85rem;margin-top:20px}
+@media print{.cab,.banda{background:#fff;color:#000}.cab a{display:none}main{margin-top:0}.hoja{box-shadow:none;border:0}}
 </style>
 </head>
-<body><main>
-<p><a href="./">← Volver a la tienda</a></p>
+<body>
+<header class="cab"><div class="cab-in">
+<a href="./" style="border:0;padding:0"><img src="img/logo.png" alt="Mega Las Malvinas · volver a la tienda"></a>
+<a href="./">← Volver a la tienda</a>
+</div></header>
+<div class="banda"><div class="banda-in">
+<small>Protección de datos personales</small>
 <h1>Política de privacidad</h1>
 <p class="fecha">Versión 2026-11-20 · Ley N.° 29733, Ley de Protección de Datos Personales, y su Reglamento (D.S. N.° 016-2024-JUS)</p>
+</div></div>
+<main><div class="hoja">
 
 <!-- PENDIENTE DEL DUEÑO: completar RUC y dirección exacta, y el código de inscripción del banco de datos "Clientes"
      ante la Autoridad Nacional de Protección de Datos Personales (ANPD) cuando se haya inscrito. -->
@@ -57,5 +80,7 @@ p,li{color:#3d4658}ul{padding-left:20px}a{color:#c01818;font-weight:600}
 
 <h2>7. Tu consentimiento</h2>
 <p>Al marcar la casilla «Acepto la política de privacidad…» antes de confirmar tu compra, nos autorizas a tratar tus datos para los fines del punto 3. Sin esa autorización no podemos registrar el pedido en línea, pero siempre puedes comprar directamente en la tienda.</p>
+</div>
+<p class="pie">Mega Las Malvinas · Barranca, Lima, Perú · <a href="./">Volver a la tienda</a></p>
 </main></body>
 </html>
