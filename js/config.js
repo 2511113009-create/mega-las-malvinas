@@ -13,7 +13,7 @@ window.TIENDA = {
   // Registro de pedidos en Google Sheets (lo lee tu programa C#). URL de la Aplicación web de
   // Apps Script que termina en /exec. Pasos en integraciones/google-apps-script/LEEME.md. Vacío = desactivado.
   // Esta URL solo permite ENVIAR pedidos; leerlos exige la CLAVE secreta, que NO va aquí.
-  hojaPedidos: 'https://script.google.com/macros/s/AKfycbyc3t9OZUyyxaRQsUFRqtOSsMTYrw9Cl9jJ6wYf7MxrLMSJDHBbUKEGD4yLesWtvDR8/exec',
+  hojaPedidos: '',
 
   // WhatsApp de atención (código de país + número, sin + ni espacios)
   whatsapp: '51992081815',
