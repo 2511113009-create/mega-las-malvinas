@@ -592,40 +592,10 @@ body{background-color:var(--fondo);background-image:url("data:image/svg+xml,%3Cs
 .aviso-feriado a{text-decoration:underline;font-weight:700}
 .distancia{margin-top:14px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
 #resDistancia{font-size:.92rem;color:var(--tinta-2)}
-/* ---------- Fondo: pasillo de ferretería detrás de todo el sitio ----------
-   Foto: "Hardware aisle" de Jeff Keyzer (CC BY-SA 2.0), ver creditos.html.
-   Capa clara encima para que los textos se lean bien. Fija al hacer scroll (también en celulares). */
-body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background:linear-gradient(180deg,rgba(243,246,252,.76),rgba(243,246,252,.86)),url("../img/fondo-ferreteria.jpg") center/cover no-repeat}
-@media print{body::before{display:none}}
-/* ---------- QR de recojo: tarjeta tipo ticket ---------- */
-.ticket-recojo{display:grid;grid-template-columns:auto minmax(0,1fr);max-width:680px;margin:16px auto 6px;text-align:left;background:#fff;border:1px solid var(--linea);border-radius:16px;box-shadow:var(--sombra);overflow:hidden}
-.tr-qr{display:grid;place-items:center;padding:18px;background:var(--azul-claro);border-right:2px dashed #b4bfd8;position:relative}
-.tr-qr::before,.tr-qr::after{content:"";position:absolute;right:-11px;width:20px;height:20px;border-radius:50%;background:#fff;border:1px solid var(--linea)}
-.tr-qr::before{top:-11px}.tr-qr::after{bottom:-11px}
-.tr-qr canvas{width:190px;max-width:100%;height:auto;border-radius:10px;background:#fff;padding:6px;box-shadow:0 1px 3px rgba(10,22,58,.12)}
-.tr-info{padding:18px 20px;display:flex;flex-direction:column;align-items:flex-start;gap:10px}
-.tr-kicker{display:inline-flex;align-items:center;gap:6px;font:800 .95rem/1 var(--titulo);letter-spacing:.06em;text-transform:uppercase;color:var(--azul)}
-.tr-kicker .ico{width:18px;height:18px}
-.ticket-recojo .codigo{margin:0;font-size:1.15rem;max-width:100%;flex-wrap:wrap}
-.ticket-recojo .codigo span{overflow-wrap:anywhere}
-.tr-pasos{margin:0;padding:0;list-style:none;counter-reset:paso;display:grid;gap:6px;font-size:.92rem;color:var(--tinta-2)}
-.tr-pasos li{counter-increment:paso;display:flex;gap:8px;align-items:flex-start;line-height:1.35}
-.tr-pasos li::before{content:counter(paso);flex:none;width:22px;height:22px;border-radius:50%;background:var(--rojo);color:#fff;font:700 .78rem/22px system-ui,sans-serif;text-align:center}
-.tr-nota{font-size:.8rem;color:var(--tenue);margin:0}
-@media (max-width:620px){
-  .ticket-recojo{grid-template-columns:1fr}
-  .tr-qr{border-right:0;border-bottom:2px dashed #b4bfd8}
-  .tr-qr::before,.tr-qr::after{top:auto;bottom:-11px;right:auto}
-  .tr-qr::before{left:-11px}.tr-qr::after{right:-11px}
-  .tr-info{align-items:stretch}
-  .ticket-recojo .codigo{font-size:1rem;justify-content:center}
-}
-/* ---------- Consentimiento de datos (Ley 29733) ---------- */
-.check.consentimiento{background:#f8faff;border:1px solid var(--linea);border-radius:12px;padding:12px 14px;transition:border-color .2s,background .2s}
-.check.consentimiento:has(input:checked){border-color:#9fd3b2;background:var(--verde-claro)}
-.check.consentimiento:has(input[aria-invalid="true"]){border-color:var(--error);background:var(--rojo-claro)}
-.check.consentimiento .cons-tit{display:flex;align-items:center;gap:6px;color:var(--tinta);font-size:.95rem;margin-bottom:4px}
-.check.consentimiento .cons-tit .ico{width:16px;height:16px;color:var(--azul)}
-.check.consentimiento a{color:var(--azul);font-weight:700;text-decoration:underline}
+.qr-pedido{margin:14px auto 4px;display:flex;flex-direction:column;align-items:center;gap:6px;max-width:300px}
+.qr-pedido canvas{width:190px;max-width:100%;height:auto;border:1px solid var(--linea);border-radius:10px;background:#fff;padding:6px}
+.exito .codigo{max-width:100%;flex-wrap:wrap;justify-content:center}
+.exito .codigo span{overflow-wrap:anywhere}
+@media (max-width:420px){.exito .codigo{font-size:1.1rem}}
+.qr-pedido figcaption{font-size:.84rem;color:var(--tenue);text-align:center;line-height:1.35}
 @media (prefers-reduced-motion:reduce){.btn-voz.escuchando{animation:none}}.campo input.otp{font:700 1.3rem/1 ui-monospace,Consolas,monospace;letter-spacing:.35em;text-align:center}

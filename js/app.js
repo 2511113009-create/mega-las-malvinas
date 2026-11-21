@@ -543,7 +543,7 @@
         + '<div class="dos"><div class="campo"><label for="fDni">DNI <span class="op">(opcional, para tu comprobante)</span></label><input id="fDni" name="dni" type="text" inputmode="numeric" maxlength="8" placeholder="8 dígitos" value="' + esc(d.dni) + '"><span class="error" id="eDni"></span></div>'
         + '<div class="campo"><label for="fRecojo">¿Cuándo recoges?</label><select id="fRecojo" name="recojo">' + ['Hoy', 'Mañana', 'En los próximos días'].map((o) => '<option' + (d.recojo === o ? ' selected' : '') + '>' + o + '</option>').join('') + '</select></div></div>'
         + '<div class="campo"><label for="fNotas">Notas para la tienda <span class="op">(opcional)</span></label><textarea id="fNotas" name="notas" maxlength="200" placeholder="Por ejemplo: color del cable, medidas, hora aproximada">' + esc(d.notas) + '</textarea></div>'
-        + '<label class="check consentimiento"><input type="checkbox" id="fAcepto" name="ok" required aria-describedby="eAcepto"' + (d.ok ? ' checked' : '') + '><span><b class="cons-tit">' + ico('shield') + ' Protección de tus datos</b>' + TEXTO_CONSENTIMIENTO + ' <a href="privacidad.html" target="_blank" rel="noopener">Leer la política de privacidad</a></span></label><span class="error" id="eAcepto" style="display:block;margin:-8px 0 12px"></span>'
+        + '<label class="check"><input type="checkbox" id="fAcepto" name="ok" required aria-describedby="eAcepto"' + (d.ok ? ' checked' : '') + '><span>' + TEXTO_CONSENTIMIENTO + ' <a href="privacidad.html" target="_blank" rel="noopener">Leer la política de privacidad</a></span></label><span class="error" id="eAcepto" style="display:block;margin:-8px 0 12px"></span>'
         + '<div class="compra-pie"><button class="btn btn-sec" type="button" data-accion="volver-carrito">' + ico('izq') + ' Volver al carrito</button><button class="btn btn-rojo" type="submit">Continuar al pago ' + ico('der') + '</button></div></form>' + resumenHTML() + '</div></div>';
       setTimeout(() => $('#fNombre') && $('#fNombre').focus(), 60);
     } else if (c.paso === 2) {
@@ -570,7 +570,9 @@
       }
       const ok = enLinea || (r && r.ok);
       cont.innerHTML = cerrar + '<div class="compra">' + pasosHTML(3) + '<div class="exito"><div class="circ' + (ok ? '' : ' ambar') + '">' + ico(ok ? 'check' : 'alerta') + '</div><h2 id="dlgPagoTit">' + (enLinea ? '¡Pago aprobado!' : ok ? '¡Pedido recibido!' : 'Pedido guardado') + '</h2>'
-        + ticketRecojoHTML(ped2)'
+        + '<p>Tu código de pedido</p><div class="codigo"><span>' + esc(ped2.codigo) + '</span><button class="btn btn-sec btn-peq" type="button" data-accion="copiar" data-texto="' + esc(ped2.codigo) + '">' + ico('copy') + ' Copiar</button></div>'
+        + '<figure class="qr-pedido"><canvas id="qrPedido" role="img" aria-label="Código QR para recoger el pedido ' + esc(ped2.codigo) + '"></canvas><figcaption><b>QR de recojo.</b> Muéstralo en tienda: el vendedor lo escanea y encuentra tu pedido al instante. No lo compartas.</figcaption>'
+        + '<button class="btn btn-sec btn-peq" type="button" data-accion="guardar-qr-pedido">' + ico('descargar') + ' Guardar QR de recojo</button></figure>'
         + (ok ? '<div class="msj ok">La tienda ya recibió tu pedido. Te escribiremos al <b>' + esc(ped2.cliente.celular) + '</b> para confirmar disponibilidad y el horario de recojo.</div>'
           : '<div class="msj mal"><b>Tu pedido aún no llegó a la tienda.</b> No se perdió: está guardado en este equipo' + (r && r.motivo === 'red' ? ' y lo reenviaremos apenas haya conexión' : '') + '. Para que lo atiendan ahora, envíalo por WhatsApp con el botón de abajo.</div>')
         + '<div class="exito-grid"><div><div class="exito-acc"><a class="btn ' + (ok ? 'btn-sec' : 'btn-wa') + ' btn-block" href="' + API.waURL(mensajePedido(ped2)) + '" target="_blank" rel="noopener">' + ico('whatsapp') + ' ' + (ok ? 'Enviar copia por WhatsApp' : 'Enviar pedido por WhatsApp') + '</a>'
@@ -585,21 +587,8 @@
   // Contiene SOLO el código del pedido, p. ej. "MLM|261120-K7QX3PZD". La pistola lectora USB del mostrador
   // lo "escribe" como texto + Enter en el programa C#, que busca el pedido por ese código.
   const textoQRRecojo = (codigo) => String(codigo).replace(/^MLM-/, 'MLM|');
-
-  // Tarjeta tipo "ticket" con el QR de recojo: QR a la izquierda, código y pasos a la derecha
-  function ticketRecojoHTML(p) {
-    const m = p.pago.metodo, pagado = p.pago.estado === 'approved';
-    const paso2 = pagado ? 'Tu pago ya está confirmado.' : m === 'tienda' ? 'Pagas en caja: ' + moneda(p.total) + '.' : 'Verificamos tu pago (operación ' + esc(p.pago.operacion || '—') + ').';
-    return '<section class="ticket-recojo" aria-label="Tu QR de recojo">'
-      + '<div class="tr-qr"><canvas id="qrPedido" role="img" aria-label="Código QR para recoger el pedido ' + esc(p.codigo) + '"></canvas></div>'
-      + '<div class="tr-info"><span class="tr-kicker">' + ico('shield') + ' Tu QR de recojo</span>'
-      + '<div class="codigo"><span>' + esc(p.codigo) + '</span><button class="btn btn-sec btn-peq" type="button" data-accion="copiar" data-texto="' + esc(p.codigo) + '">' + ico('copy') + ' Copiar</button></div>'
-      + '<ol class="tr-pasos"><li>Muestra este QR en la tienda (desde tu celular o impreso).</li><li>' + paso2 + '</li><li>Recoges tus productos al instante.</li></ol>'
-      + '<button class="btn btn-rojo btn-peq" type="button" data-accion="guardar-qr-pedido">' + ico('descargar') + ' Guardar QR de recojo</button>'
-      + '<p class="tr-nota">Es personal: solo quien lo presente puede recoger el pedido. No lo compartas.</p></div></section>';
-  }
   function qrDelPedido(canvas, codigo) {
-    const quitar = () => { const fig = canvas && canvas.closest('figure, .tr-qr'); if (fig) fig.remove(); return null; };
+    const quitar = () => { const fig = canvas && canvas.closest('figure'); if (fig) fig.remove(); return null; };
     if (!canvas || !window.qrcode) return quitar();
     try {
       const qr = window.qrcode(0, 'M'); // nivel M: suficiente para un texto corto y se lee rápido
